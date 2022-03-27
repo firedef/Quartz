@@ -45,6 +45,7 @@ public unsafe class NativeList<T> : IList<T>, IDisposable where T : unmanaged {
 	}
 
 	public NativeList(int size) {
+		if (size <= 0) return;
 		Reallocate(size);
 	}
 
@@ -80,10 +81,10 @@ public unsafe class NativeList<T> : IList<T>, IDisposable where T : unmanaged {
 	public void CopyTo(T* dest, int c) => MemCpy(dataPtr, dest, math.min(c, count) * sizeof(T));
 	public void CopyTo(T* dest) => MemCpy(dataPtr, dest, count * sizeof(T));
 
-	protected static void* Alloc(int s) => NativeMemory.Alloc((nuint)s);
-	protected static void Free(void* p) => NativeMemory.Free(p);
-	protected static void* Realloc(void* p, int s) => NativeMemory.Realloc(p, (nuint)s);
-	protected static void MemCpy(void* src, void* dest, int c) => Buffer.MemoryCopy(src, dest, c, c);
+	protected virtual void* Alloc(int bytes) => NativeMemory.Alloc((nuint)bytes);
+	protected virtual void Free(void* p) => NativeMemory.Free(p);
+	protected virtual void* Realloc(void* p, int bytes) => NativeMemory.Realloc(p, (nuint)bytes);
+	protected virtual void MemCpy(void* src, void* dest, int bytes) => Buffer.MemoryCopy(src, dest, bytes, bytes);
 
 	private void ReleaseUnmanagedResources() {
 		if (!isAllocated) return;

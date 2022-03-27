@@ -22,51 +22,29 @@ public class Mesh : MeshBase {
 		vao = VAO.Generate();
 		ibo = IBO.Generate();
 		Bind();
-		Vertex.ProcessVertexAttributes();
+		MeshUtils.ProcessVertexAttributes<Vertex>();
 	}
 
-	public void Bind() {
+	public override void Bind() {
+		if (!vao.isGenerated) {
+			GenBuffers();
+			UpdateBuffers(true);
+			return;
+		}
+		
 		vao.Bind();
 		vbo.Bind();
 		ibo.Bind();
 	}
 
 	private void UpdateBuffers(bool forceFullUpdate) {
-		UpdateBuffer(vertices, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw, forceFullUpdate);
-		UpdateBuffer(indices, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.DynamicDraw, forceFullUpdate);
+		MeshUtils.UpdateBuffer(vertices, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw, forceFullUpdate);
+		MeshUtils.UpdateBuffer(indices, BufferTargetARB.ElementArrayBuffer, BufferUsageARB.DynamicDraw, forceFullUpdate);
 		updateRequired = false;
 	}
-
-	private static unsafe void UpdateBuffer<T>(HashedList<T> buffer, BufferTargetARB target, BufferUsageARB usage, bool forceFullUpdate) where T : unmanaged {
-		int size = sizeof(T);
-		bool sizeChanged = buffer.GetCountChange();
-		if (sizeChanged || forceFullUpdate) {
-			int c = buffer.count;
-			GL.BufferData(target, c * size, buffer.dataPtr, usage);
-			buffer.ResetChanges();
-			
-			Log.Note($"update mesh {target}", LogForm.renderer);
-			return;
-		}
-
-		List<Range> changes = buffer.GetChanges();
-		foreach (Range range in changes) {
-			int start = range.Start.Value;
-			int len = range.End.Value - start;
-			GL.BufferSubData(target, (IntPtr)(start * size), len * size, buffer.dataPtr + start);
-		}
-		if (changes.Count > 0) 
-			Log.Note($"update mesh {target}", LogForm.renderer);
-	}
-
-	public bool PrepareForRender() {
+	
+	public override bool PrepareForRender() {
 		if (isDisposed || vertices.count == 0 || indices.count == 0) return false;
-		if (!vao.isGenerated) {
-			GenBuffers();
-			UpdateBuffers(true);
-			return true;
-		}
-		
 		Bind();
 		if (updateRequired) UpdateBuffers(false);
 		return true;

@@ -4,7 +4,7 @@ using OpenTK.Graphics.OpenGL.Compatibility;
 
 namespace Quartz.geometry.mesh; 
 
-public record struct Vertex(float3 position, float3 normal, color color, float2 uv0, float2 uv1) {
+public record struct Vertex(float3 position, float3 normal, color color, float2 uv0, float2 uv1) : IMeshVertex {
 	public const int size = (3 + 3 + 2 + 2) * 4 + 1 * 4;
 	
 	public float3 position = position;
@@ -17,8 +17,8 @@ public record struct Vertex(float3 position, float3 normal, color color, float2 
 	public Vertex(float3 position, color color, float2 uv) : this(position, float3.front, color, uv, float2.zero) { }
 	public Vertex(float3 position, color color) : this(position, float3.front, color, float2.zero, float2.zero) { }
 	public Vertex(float3 position) : this(position, float3.front, color.white, float2.zero, float2.zero) { }
-	
-	public static void ProcessVertexAttributes() {
+
+	public void ProcessVertexAttributes() {
 		const int stride = size;
 
 		const int offsetPosition = 0;

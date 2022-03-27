@@ -6,20 +6,20 @@ using Quartz.debug.log;
 namespace Quartz.utils; 
 
 public static class OpenGl {
-	public static Shader boundShader = Shader.empty;
+	public static ShaderProgram boundShaderProgram = ShaderProgram.empty;
 	
-	public static void BindShader(ref Shader v) {
+	public static void BindShader(ref ShaderProgram v) {
 		if (!v.isGenerated) v.Compile();
-		if (boundShader == v) return;
-		boundShader = v;
+		if (boundShaderProgram == v) return;
+		boundShaderProgram = v;
 		Log.Minimal($"bound shader {v.programHandle.Handle}", LogForm.rendererCore);
 		GL.UseProgram(v.programHandle);
 	}
 	
 	public static void UnbindShader() {
-		if (boundShader == Shader.empty) return;
-		Log.Minimal($"unbound shader {boundShader.programHandle.Handle}", LogForm.rendererCore);
-		boundShader = Shader.empty;
+		if (boundShaderProgram == ShaderProgram.empty) return;
+		Log.Minimal($"unbound shader {boundShaderProgram.programHandle.Handle}", LogForm.rendererCore);
+		boundShaderProgram = ShaderProgram.empty;
 		GL.UseProgram(ProgramHandle.Zero);
 	}
 	

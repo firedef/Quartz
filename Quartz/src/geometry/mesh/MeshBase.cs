@@ -1,13 +1,17 @@
 using MathStuff;
 using MathStuff.vectors;
+using OpenTK.Graphics.OpenGL.Compatibility;
 using Quartz.collections;
 
 namespace Quartz.geometry.mesh; 
 
-public abstract class MeshBase : IDisposable {
+public abstract class MeshBase : IDisposable, IMesh {
 	public HashedList<Vertex> vertices;
 	public HashedList<ushort> indices;
+	public PrimitiveType topology = PrimitiveType.Triangles;
 	public rect bounds;
+
+	public PrimitiveType getTopology => topology;
 
 	public MeshBase(HashedList<Vertex> vertices, HashedList<ushort> indices) {
 		this.vertices = vertices;
@@ -144,6 +148,9 @@ public abstract class MeshBase : IDisposable {
 	/// <summary>mark mesh as modified <br/><br/>
 	/// it will recalculate bounds and (if GlMesh) update it on gpu</summary>
 	public virtual void OnModified() => RecalculateBounds();
+	
+	public abstract void Bind();
+	public abstract bool PrepareForRender();
 
 #endregion other
 }
