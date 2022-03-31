@@ -2,7 +2,7 @@ using OpenTK.Graphics.OpenGL.Compatibility;
 using Quartz.collections;
 using Quartz.collections.buffers;
 
-namespace Quartz.geometry.mesh; 
+namespace Quartz.objects.mesh; 
 
 public class TinyPointMesh : IDisposable, IMesh {
 	public NativeList<Vertex> vertices;
@@ -28,7 +28,6 @@ public class TinyPointMesh : IDisposable, IMesh {
 			this.vertices = new(vPtr, vertices.Length);
 
 		this.vertices.count = vertices.Length;
-		//GL.FlushMappedBufferRange(BufferTargetARB.ArrayBuffer, IntPtr.Zero, this.vertices.count * sizeof(Vertex));
 	}
 	
 

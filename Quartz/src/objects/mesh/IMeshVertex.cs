@@ -1,4 +1,4 @@
-namespace Quartz.geometry.mesh; 
+namespace Quartz.objects.mesh; 
 
 public interface IMeshVertex {
 	public void ProcessVertexAttributes();

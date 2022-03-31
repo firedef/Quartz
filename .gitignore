@@ -4,3 +4,9 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 .idea/
+Quartz.Core/cmake-build-debug/
+Quartz.Core/CMakeFiles/
+Quartz.Core/cmake_install.cmake
+Quartz.Core/CMakeCache.txt
+Quartz.Core/Makefile
+Quartz.Core/Quartz_Core_test

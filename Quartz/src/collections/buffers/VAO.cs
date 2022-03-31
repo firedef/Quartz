@@ -1,8 +1,6 @@
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL.Compatibility;
 using Quartz.debug.log;
-using Quartz.geometry.mesh;
-using Quartz.utils;
 
 namespace Quartz.collections.buffers; 
 

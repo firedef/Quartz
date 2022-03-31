@@ -1,9 +1,8 @@
 using OpenTK.Graphics.OpenGL.Compatibility;
 using Quartz.collections;
 using Quartz.collections.buffers;
-using Quartz.debug.log;
 
-namespace Quartz.geometry.mesh; 
+namespace Quartz.objects.mesh; 
 
 public class Mesh : MeshBase {
 	public VBO vbo;

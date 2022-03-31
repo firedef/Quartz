@@ -1,7 +1,7 @@
 using OpenTK.Graphics.OpenGL.Compatibility;
 using Quartz.collections;
 
-namespace Quartz.geometry.mesh; 
+namespace Quartz.objects.mesh; 
 
 public static class MeshUtils {
 	public static void UpdateBuffer<T>(HashedList<T> buffer, BufferTargetARB target, BufferUsageARB usage, bool forceFullUpdate) where T : unmanaged {

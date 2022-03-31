@@ -23,4 +23,19 @@
       <PackageReference Include="Spectre.Console" Version="0.43.1-preview.0.43" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="src\objects\ecs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="libs\libQuartz_Core.so" />
+      <Content Include="libs\libQuartz_Core.so">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+    <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+      <Exec Command="$(ProjectDir)/build.sh" />
+    </Target>
+
 </Project>

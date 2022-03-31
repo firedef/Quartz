@@ -1,6 +1,6 @@
 using OpenTK.Graphics.OpenGL.Compatibility;
 
-namespace Quartz.geometry.mesh; 
+namespace Quartz.objects.mesh; 
 
 public interface IMesh {
 	public PrimitiveType getTopology { get; }

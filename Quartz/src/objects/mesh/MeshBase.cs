@@ -3,7 +3,7 @@ using MathStuff.vectors;
 using OpenTK.Graphics.OpenGL.Compatibility;
 using Quartz.collections;
 
-namespace Quartz.geometry.mesh; 
+namespace Quartz.objects.mesh; 
 
 public abstract class MeshBase : IDisposable, IMesh {
 	public HashedList<Vertex> vertices;
