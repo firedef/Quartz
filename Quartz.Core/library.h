@@ -2,6 +2,8 @@
 #define QUARTZ_CORE_LIBRARY_H
 
 #include "src/memory/MemoryAllocator.h"
+#include "src/memory/EcsArray.h"
+#include "src/memory/MemUtils.h"
 
 int main();
 
@@ -14,6 +16,10 @@ extern "C" {
     uint64_t GetCurrentAllocatedBytes() { return MemoryAllocator::getInstance()->currentAllocated;}
     uint64_t GetTotalAllocatedBytes() { return MemoryAllocator::getInstance()->totalAllocated;}
     uint64_t GetAllocatedBytesSinceLastCleanup() { return MemoryAllocator::getInstance()->allocatedSinceLastCleanup;}
+    
+    void MemCpy(void* dest, void* src, uint32_t bytes) { MemUtils::MemCpy(dest, src, bytes); }
+    void MemSet(void* dest, int val, uint32_t bytes) { MemUtils::MemSet(dest, val, bytes); }
+    int MemCmp(void* dest, void* src, uint32_t bytes) { return MemUtils::MemCmp(dest, src, bytes); }
 }
 
 #endif //QUARTZ_CORE_LIBRARY_H

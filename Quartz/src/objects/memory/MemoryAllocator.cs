@@ -29,6 +29,8 @@ public static class MemoryAllocator {
 		Log.Note($"memoryAllocator cleanup");
 	}
 
+	public static unsafe void MemCpy<T>(T* dest, T* src, int count) where T : unmanaged => QuartzNative.MemCpy(dest, src, (uint)(count * sizeof(T))); 
+
 	public static void OnRareUpdate(float deltatime) {
 		Log.Print(ToStringMarkup());
 		allocatedPerRareUpdate = 0;

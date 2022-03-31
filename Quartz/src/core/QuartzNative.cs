@@ -25,4 +25,13 @@ public static class QuartzNative {
 	
 	[DllImport(libName)]
 	public static extern ulong GetAllocatedBytesSinceLastCleanup();
+	
+	[DllImport(libName)]
+	public static extern unsafe void MemCpy(void* dest, void* src, uint bytes);
+	
+	[DllImport(libName)]
+	public static extern unsafe void MemSet(void* dest, int val, uint bytes);
+	
+	[DllImport(libName)]
+	public static extern unsafe int MemCmp(void* dest, void* src, uint bytes);
 }
