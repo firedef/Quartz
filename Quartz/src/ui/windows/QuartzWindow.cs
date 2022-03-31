@@ -84,14 +84,23 @@ void main() {
 		GLFW.WindowHint(WindowHintInt.Samples, 4);
 	}
 
+	public static NativeList<int> list;
+
 	protected override unsafe void OnLoad() {
-		void* ptr = MemoryAllocator.Allocate(55);
-		ptr = MemoryAllocator.Allocate(95);
-		ptr = MemoryAllocator.Resize(ptr, 33);
-		ptr = MemoryAllocator.Resize(ptr, 3300);
-		MemoryAllocator.Free(ptr);
-		ptr = MemoryAllocator.Allocate(25);
-		
+		//void* ptr = MemoryAllocator.Allocate(55);
+		//ptr = MemoryAllocator.Allocate(95);
+		//ptr = MemoryAllocator.Resize(ptr, 33);
+		//ptr = MemoryAllocator.Resize(ptr, 3300);
+		//MemoryAllocator.Free(ptr);
+		//ptr = MemoryAllocator.Allocate(25);
+
+		list = new();
+		list.Add(87);
+		list.Add(3);
+		list.Add(13);
+
+		Console.WriteLine(list[1]);
+
 		shaderProgram = new(_vertexShaderSrc, _fragmentShaderSrc, _geometryShaderSrc);
 
 		const float r = .05f;
@@ -154,7 +163,7 @@ void main() {
 		// GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
 		int c = mesh2.vertices.count;
-		Vertex* ptr = mesh2.vertices.dataPtr;
+		Vertex* ptr = mesh2.vertices.ptr;
 		float time = (float)DateTime.Now.TimeOfDay.TotalMilliseconds * spd;
 
 		Random rnd = new();

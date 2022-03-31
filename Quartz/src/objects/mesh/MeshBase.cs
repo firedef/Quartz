@@ -93,9 +93,9 @@ public abstract class MeshBase : IDisposable, IMesh {
 			float3 p1 = vertices[i1].position - vertices[i3].position;
 			float3 normal = float3.Cross(p0, p1).normalized;
 
-			vertices.dataPtr[i1].normal = normal;
-			vertices.dataPtr[i2].normal = normal;
-			vertices.dataPtr[i3].normal = normal;
+			vertices.ptr[i1].normal = normal;
+			vertices.ptr[i2].normal = normal;
+			vertices.ptr[i3].normal = normal;
 		}
 	}
 

@@ -1,6 +1,7 @@
 using OpenTK.Graphics.OpenGL.Compatibility;
 using Quartz.collections;
 using Quartz.collections.buffers;
+using Quartz.objects.memory;
 
 namespace Quartz.objects.mesh; 
 

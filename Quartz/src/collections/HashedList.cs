@@ -1,4 +1,5 @@
 using MathStuff;
+using Quartz.objects.memory;
 
 namespace Quartz.collections; 
 
@@ -23,7 +24,7 @@ public class HashedList<T> : NativeList<T> where T : unmanaged {
 
 	protected unsafe int ComputeHash(int blockIndex) {
 		int iterCount = math.min(blockSize, count - blockIndex * blockSize);
-		byte* start = (byte*)(dataPtr + blockIndex * blockSize);
+		byte* start = (byte*)(ptr + blockIndex * blockSize);
 
 		return (int)HashBytes(start, iterCount * sizeof(T), (uint)blockIndex);
 	}

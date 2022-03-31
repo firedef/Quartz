@@ -1,5 +1,6 @@
 using OpenTK.Graphics.OpenGL.Compatibility;
 using Quartz.collections;
+using Quartz.objects.memory;
 
 namespace Quartz.objects.mesh; 
 
@@ -20,12 +21,12 @@ public static class MeshUtils {
 		else BufferSubData(buffer, target, ..buffer.count);
 	} 
 	
-	public static unsafe void BufferData<T>(NativeList<T> buffer, BufferTargetARB target, BufferUsageARB usage) where T : unmanaged => GL.BufferData(target, buffer.count * sizeof(T), buffer.dataPtr, usage);
+	public static unsafe void BufferData<T>(NativeList<T> buffer, BufferTargetARB target, BufferUsageARB usage) where T : unmanaged => GL.BufferData(target, buffer.count * sizeof(T), buffer.ptr, usage);
 
 	public static unsafe void BufferSubData<T>(NativeList<T> buffer, BufferTargetARB target, Range range) where T : unmanaged {
 		int start = range.Start.Value;
 		int len = range.End.Value - start;
-		GL.BufferSubData(target, (IntPtr)(start * sizeof(T)), len * sizeof(T), buffer.dataPtr + start);
+		GL.BufferSubData(target, (IntPtr)(start * sizeof(T)), len * sizeof(T), buffer.ptr + start);
 	}
 
 	public static void ProcessVertexAttributes<T>() where T : IMeshVertex, new() => new T().ProcessVertexAttributes();

@@ -11,7 +11,7 @@ public abstract class ParticleSystem {
 	protected abstract ParticleData UpdateParticle(ParticleData particle, float deltaTime);
 
 	public virtual unsafe void Update(float deltaTime) {
-		ParticleData* ptr = (ParticleData*)mesh.vertices.dataPtr;
+		ParticleData* ptr = (ParticleData*)mesh.vertices.ptr;
 		Parallel.For(0, particleCount, i => ptr[i] = UpdateParticle(ptr[i], deltaTime));
 	}
 	

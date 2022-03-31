@@ -22,6 +22,13 @@ public class NativeList<T> : ICollection<T>, IDisposable where T : unmanaged {
 		ptr = (T*) MemoryAllocator.Allocate(capacity * sizeof(T));
 		this.capacity = capacity;
 	}
+	
+	/// <summary>data from ptr will been copied to new allocation</summary>
+	public unsafe NativeList(T* other, int size) : this(size) {
+		count = size;
+		MemoryAllocator.MemCpy(ptr, other, size);
+	}
+	
 
 #endregion ctors
 
@@ -37,6 +44,12 @@ public class NativeList<T> : ICollection<T>, IDisposable where T : unmanaged {
 	protected void Expand(int minSize) => Resize(capacity + math.max(minSize, defaultSize));
 	public void EnsureFreeSpace(int space) { if (freeSpace < space) Expand(space); }
 	public void EnsureCapacity(int c) { if (capacity < c) Expand(c - capacity); }
+	
+	public unsafe void CopyFrom(T* src, int c) {
+		EnsureCapacity(c);
+		count = c;
+		MemoryAllocator.MemCpy(ptr, src, c);
+	}
 
 #endregion memory
 
