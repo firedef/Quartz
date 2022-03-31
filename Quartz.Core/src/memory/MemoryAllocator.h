@@ -6,8 +6,9 @@
 #include <vector>
 #include <unordered_map>
 #include <iostream>
+#include <cstring>
 
-#define LOG_ALLOC_ERRORS
+#undef LOG_ALLOC_ERRORS
 #define DEFAULT_ALLOCATOR_BUCKET_SIZE 1<<28
 
 struct Allocation {
@@ -15,6 +16,10 @@ struct Allocation {
     uint32_t allocatedBytes;
 
     Allocation(uint8_t* allocationPtr, uint32_t allocatedBytes);
+    
+    bool contains(const uint8_t* ptr) const {
+        return allocationPtr <= ptr && (ptr - allocationPtr) <= allocatedBytes;
+    }
 };
 
 struct MemoryBlock {
@@ -46,20 +51,24 @@ public:
     void freeItem(uint8_t* ptr);
     static bool compareBlocks(MemoryBlock a, MemoryBlock b);
     void cleanup();
+    
+    bool tryResize(uint8_t* ptr, uint32_t newSize);
 };
 
 class MemoryAllocator {
-private:
+public:
     static MemoryAllocator* instance;
     
     uint32_t bucketCount{};
     uint64_t currentAllocated{};
+    uint64_t allocatedSinceLastCleanup{};
     uint64_t totalAllocated{};
     
     uint32_t defaultBucketSize;
     
-    std::vector<Bucket*> buckets; 
-    
+    std::vector<Bucket*> buckets;
+
+private:
     void GenBucket(uint32_t size);
     static inline void DeleteBucket(Bucket* bucket);
 
@@ -69,6 +78,11 @@ private:
     inline int findBucket(uint8_t* ptr);
     inline void freeItem(uint8_t* ptr);
     
+    inline void addAllocStats(int v) {
+        currentAllocated += v;
+        totalAllocated += v;
+        allocatedSinceLastCleanup += v;
+    }
 public:
     MemoryAllocator();
     explicit MemoryAllocator(uint32_t defaultBucketSize);
@@ -77,12 +91,14 @@ public:
     
     uint8_t* allocate(uint32_t sizeBytes);
     void free(uint8_t* ptr);
+    uint8_t* resize(uint8_t* ptr, uint32_t newSize);
     void cleanup();
     
     static MemoryAllocator* getInstance();
     
     static uint8_t* allocateGlobal(uint32_t sizeBytes);
     static void freeGlobal(uint8_t* ptr);
+    static uint8_t* resizeGlobal(uint8_t* ptr, uint32_t newSize);
     static void cleanupGlobal();
 };
 

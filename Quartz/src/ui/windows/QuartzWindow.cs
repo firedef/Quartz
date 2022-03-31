@@ -6,7 +6,9 @@ using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Quartz.collections.shaders;
 using Quartz.core;
+using Quartz.objects.memory;
 using Quartz.objects.mesh;
+using Quartz.other.events;
 using Quartz.utils;
 
 namespace Quartz.ui.windows; 
@@ -83,10 +85,12 @@ void main() {
 	}
 
 	protected override unsafe void OnLoad() {
-		void* ptr = QuartzNative.Allocate(55);
-		Console.WriteLine((long) ptr);
-		QuartzNative.Free(ptr);
-		QuartzNative.CleanupMemoryAllocator();
+		void* ptr = MemoryAllocator.Allocate(55);
+		ptr = MemoryAllocator.Allocate(95);
+		ptr = MemoryAllocator.Resize(ptr, 33);
+		ptr = MemoryAllocator.Resize(ptr, 3300);
+		MemoryAllocator.Free(ptr);
+		ptr = MemoryAllocator.Allocate(25);
 		
 		shaderProgram = new(_vertexShaderSrc, _fragmentShaderSrc, _geometryShaderSrc);
 
@@ -140,6 +144,7 @@ void main() {
 	}
 
 	protected override unsafe void OnRenderFrame(FrameEventArgs args) {
+		EventManager.Update();
 		const float spd = 1f;
 		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 		shaderProgram.Bind();
@@ -174,19 +179,19 @@ void main() {
 			float2 vec = (pos - gravity0) * 500;
 			float len = vec.length;
 			float g = 9.81f / (len * len * len);
-			vel -= vec * g * .05f * spd;
+			vel -= vec * g * .5f * spd;
 			temperature += 1000f / len;
 			
 			vec = (pos - gravity1) * 500;
 			len = vec.length;
 			g = 9.81f / (len * len * len);
-			vel -= vec * g * .05f * spd;
+			vel -= vec * g * .5f * spd;
 			temperature += 1000f / len;
 			
 			vec = (pos - gravity2) * 500;
 			len = vec.length;
 			g = 9.81f / (len * len * len);
-			vel -= vec * g * .05f * spd;
+			vel -= vec * g * .5f * spd;
 			temperature += 1000f / len;
 
 			// for (int j = 0; j < gC; j++) {

@@ -12,5 +12,17 @@ public static class QuartzNative {
 	public static extern unsafe void Free(void* ptr);
 	
 	[DllImport(libName)]
-	public static extern unsafe void CleanupMemoryAllocator();
+	public static extern unsafe void* Resize(void* ptr, uint newSize);
+	
+	[DllImport(libName)]
+	public static extern void CleanupMemoryAllocator();
+	
+	[DllImport(libName)]
+	public static extern ulong GetCurrentAllocatedBytes();
+	
+	[DllImport(libName)]
+	public static extern ulong GetTotalAllocatedBytes();
+	
+	[DllImport(libName)]
+	public static extern ulong GetAllocatedBytesSinceLastCleanup();
 }

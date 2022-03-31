@@ -106,6 +106,34 @@ Bucket::Bucket(const Allocation &bucketAllocation) : bucketAllocation(bucketAllo
     allocations = std::unordered_map<uint8_t*, uint32_t>();
 }
 
+bool Bucket::tryResize(uint8_t* ptr, uint32_t newSize) {
+    uint32_t oldSize = allocations[ptr];
+    [[unlikely]] if (newSize == oldSize) return true;
+
+    uint32_t start = ptr - bucketAllocation.allocationPtr;
+    if (newSize < oldSize) {
+        uint32_t contraction = oldSize - newSize;
+        allocations[ptr] = newSize;
+        freeBlocks.emplace_back(start + newSize, contraction);
+        blockCount++;
+        return true;
+    }
+
+    uint32_t end = start + oldSize;
+
+    for (int i = 0; i < blockCount; ++i) {
+        if (freeBlocks[i].length > 0 && freeBlocks[i].start != end) continue;
+        uint32_t expansion = newSize - oldSize;
+        if (freeBlocks[i].length < expansion) return false;
+
+        freeBlocks[i].length -= expansion;
+        freeBlocks[i].start += expansion;
+        return true;
+    }
+
+    return false;
+}
+
 
 void MemoryAllocator::GenBucket(uint32_t size) {
     auto* bucketAllocationPtr = (uint8_t*) malloc(size);
@@ -138,16 +166,18 @@ int MemoryAllocator::findPreferredBucket(uint32_t size) {
 }
 
 uint8_t *MemoryAllocator::allocItem(uint32_t size) {
+    addAllocStats((int) size);
+    
     int bucket = findPreferredBucket(size);
     [[likely]] if (bucket != -1) return buckets[bucket]->allocItem(size).allocationPtr;
 
-    GenBucket(defaultBucketSize);
+    GenBucket(std::max(defaultBucketSize, size));
     return buckets[bucketCount - 1]->allocItem(size).allocationPtr;
 }
 
 int MemoryAllocator::findBucket(uint8_t* ptr) {
     for (int i = 0; i < bucketCount; ++i)
-        if (buckets[i]->allocations.contains(ptr)) return i;
+        if (buckets[i]->bucketAllocation.contains(ptr)) return i;
     return -1;
 }
 
@@ -157,7 +187,8 @@ void MemoryAllocator::freeItem(uint8_t *ptr) {
 #ifdef LOG_ALLOC_ERRORS
     if (bucket == -1) std::cout << "cannot free allocation: bucket not found\n";
 #endif
-    
+
+    currentAllocated -= buckets[bucket]->allocations[ptr];
     if (bucket != -1) buckets[bucket]->freeItem(ptr);
 }
 
@@ -178,8 +209,39 @@ MemoryAllocator* MemoryAllocator::getInstance() {
     return instance;
 }
 
-void MemoryAllocator::cleanup() {for (int i = 0; i < bucketCount; ++i) buckets[i]->cleanup();}
+void MemoryAllocator::cleanup() {
+    for (int i = 0; i < bucketCount; ++i) buckets[i]->cleanup();
+    allocatedSinceLastCleanup = 0;
+}
 
 void MemoryAllocator::free(uint8_t *ptr) {return freeItem(ptr);}
 
 uint8_t* MemoryAllocator::allocate(uint32_t sizeBytes) {return allocItem(sizeBytes);}
+
+uint8_t* MemoryAllocator::resize(uint8_t* ptr, uint32_t newSize) {
+    [[unlikely]] if (ptr == nullptr) return nullptr;
+    
+    uint32_t oldSize = -1;
+    for (int i = 0; i < bucketCount; ++i) {
+        if (!buckets[i]->bucketAllocation.contains(ptr)) continue;
+        
+        oldSize = buckets[i]->allocations[ptr];
+        if (!buckets[i]->tryResize(ptr, newSize)) break;
+        addAllocStats((int)newSize - (int)oldSize);
+        return ptr; 
+    }
+
+    [[unlikely]] if (oldSize == -1) return nullptr;
+    
+    uint8_t* newPtr = allocate(newSize);
+    std::memcpy(newPtr, ptr, std::min(newSize, oldSize));
+    freeItem(ptr);
+
+    addAllocStats((int)newSize - (int)oldSize);
+    
+    return newPtr;
+}
+
+uint8_t* MemoryAllocator::resizeGlobal(uint8_t* ptr, uint32_t newSize) {
+    return getInstance()->resize(ptr, newSize);
+}
