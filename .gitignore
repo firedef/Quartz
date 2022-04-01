@@ -10,3 +10,4 @@ Quartz.Core/cmake_install.cmake
 Quartz.Core/CMakeCache.txt
 Quartz.Core/Makefile
 Quartz.Core/Quartz_Core_test
+Quartz.Core/.cmake/

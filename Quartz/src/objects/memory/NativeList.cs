@@ -149,13 +149,13 @@ public class NativeList<T> : ICollection<T>, IDisposable where T : unmanaged {
 #region enumerator
 	
 	public class Enumerator : IEnumerator<T> {
-		public int pos;
+		public int pos = -1;
 		public NativeList<T> owner;
 
 		public Enumerator(NativeList<T> owner) => this.owner = owner;
 
-		public bool MoveNext() => pos++ < owner.count;
-		public void Reset() => pos = 0;
+		public bool MoveNext() => ++pos < owner.count;
+		public void Reset() => pos = -1;
 		public T Current => owner[pos];
 
 		object IEnumerator.Current => Current;

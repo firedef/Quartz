@@ -19,6 +19,8 @@ int SortedIntIntList::binarySearch(const uint32_t key) const {
         } 
         high = mid - 1;
     }
+
+    if (low < 0 || low >= elements.size()) return -1;
     
     return low;
 }

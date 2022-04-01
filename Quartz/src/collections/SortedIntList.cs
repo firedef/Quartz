@@ -36,12 +36,13 @@ public class SortedIntList : NativeList<int> {
 			high = mid - 1;
 		}
 
-		return mid;
+		return low;
 	}
 	
 	public unsafe int BinarySearchExact(int v) {
+		if (count == 0) return -1;
 		int ind = BinarySearch(v);
-		if (ptr[ind] == v) return ind;
+		if (ind >= 0 && ind < count && ptr[ind] == v) return ind;
 		return -1;
 	}
 }

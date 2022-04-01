@@ -30,6 +30,11 @@ public class DualIntMap {
 	public bool ContainsKey(uint k) => GetVal(k) != uint.MaxValue;
 	public bool ContainsVal(uint v) => GetKey(v) != uint.MaxValue;
 
+	public void Clear() {
+		kv.Clear();
+		vk.Clear();
+	}
+
 	public uint this[uint k] {
 		get => GetVal(k);
 		set => Set(k, value);
