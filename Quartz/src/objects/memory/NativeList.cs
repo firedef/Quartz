@@ -12,6 +12,9 @@ public class NativeList<T> : ICollection<T>, IDisposable where T : unmanaged {
 	public int count;
 	public int freeSpace => capacity - count;
 
+	public unsafe T first => ptr[0];
+	public unsafe T last => ptr[count - 1];
+
 #endregion fields
 
 #region ctors
@@ -55,12 +58,16 @@ public class NativeList<T> : ICollection<T>, IDisposable where T : unmanaged {
 
 #region elements
 
-	public unsafe void Add(T v) {
+	public virtual unsafe int Add(T v) {
 		EnsureFreeSpace(1);
 		ptr[count++] = v;
+		return count - 1;
 	}
 
-	public void Pop(int c = 1) => count = math.max(count, count - c);
+	public virtual unsafe T Pop(int c = 1) {
+		count = math.max(0, count - c);
+		return ptr[count];
+	}
 
 	public unsafe void MoveElements(int src, int dest, int c) {
 		EnsureCapacity(dest + c);
@@ -79,15 +86,32 @@ public class NativeList<T> : ICollection<T>, IDisposable where T : unmanaged {
 	protected void CascadeInsert(int index, int c) => ShiftElements(index,  c);
 
 	public void Insert(int index, T v) {
+		if (index >= count) {
+			Add(v);
+			return;
+		} 
 		CascadeInsert(index, 1);
 		this[index] = v;
 	}
+	
+	public unsafe T* InsertSpace(int index, int c) {
+		if (index + c >= count) {
+			EnsureFreeSpace(c);
+			count += c;
+			return ptr + count - c;
+		} 
+		CascadeInsert(index, c);
+		return ptr + index;
+	}
 
-	public void RemoveAt(int index, int c = 1) => CascadeRemove(index, c);
+	public virtual void RemoveAt(int index, int c = 1) {
+		if (index + c == count) Pop(c);
+		else CascadeRemove(index, c);
+	}
 
 	public unsafe T this[int index] { get => ptr[index]; set => ptr[index] = value; }
 
-	public int IndexOf(T v) { 
+	public virtual int IndexOf(T v) { 
 		for (int i = 0; i < count; i++) if (this[i].Equals(v)) return i; 
 		return -1; 
 	}
@@ -103,10 +127,12 @@ public class NativeList<T> : ICollection<T>, IDisposable where T : unmanaged {
 
 #region icollection
 
+	void ICollection<T>.Add(T v) => Add(v); 
+
 	public void Clear() => count = 0;
 	public bool Contains(T item) => IndexOf(item) != -1;
 	public unsafe void CopyTo(T[] array, int arrayIndex) { fixed(T* dest = array) CopyTo(dest, array.Length); }
-	public bool Remove(T item) {
+	public virtual bool Remove(T item) {
 		int ind = IndexOf(item);
 		if (ind == -1) return false;
 		RemoveAt(ind);

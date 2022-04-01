@@ -24,7 +24,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="src\objects\ecs\entities" />
       <Folder Include="src\objects\ecs\systems" />
     </ItemGroup>
 

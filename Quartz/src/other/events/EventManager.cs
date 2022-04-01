@@ -18,24 +18,27 @@ public static class EventManager {
 	private static double lastFrameUpdateTime;
 	private static double lastFixedUpdateTime;
 	private static double lastRareUpdateTime;
+	private static bool isFirstUpdate = true;
 
 	public static void Update() {
 		double currentTime = Time.secondsRealTime;
 		float frameDeltaTime = (float)(currentTime - lastFrameUpdateTime);
 		lastFrameUpdateTime = currentTime;
-		OnFrameUpdate(frameDeltaTime);
+		if (!isFirstUpdate) OnFrameUpdate(frameDeltaTime);
 		
 		float fixedDeltaTime = (float)(currentTime - lastFixedUpdateTime);
 		if (fixedDeltaTime >= fixedUpdateRate) {
 			lastFixedUpdateTime = currentTime;
-			OnFixedUpdate(fixedDeltaTime);
+			if (!isFirstUpdate) OnFixedUpdate(fixedDeltaTime);
 		}
 		
 		float rareDeltaTime = (float)(currentTime - lastRareUpdateTime);
 		if (rareDeltaTime >= rareUpdateRate) {
 			lastRareUpdateTime = currentTime;
-			OnRareUpdate(rareDeltaTime);
+			if (!isFirstUpdate) OnRareUpdate(rareDeltaTime);
 		}
+
+		isFirstUpdate = false;
 	}
 
 	private static void OnFrameUpdate(float deltatime) {

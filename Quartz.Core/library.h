@@ -4,6 +4,7 @@
 #include "src/memory/MemoryAllocator.h"
 #include "src/memory/EcsArray.h"
 #include "src/memory/MemUtils.h"
+#include "src/collections/IntMap.h"
 
 int main();
 
@@ -20,6 +21,14 @@ extern "C" {
     void MemCpy(void* dest, void* src, uint32_t bytes) { MemUtils::MemCpy(dest, src, bytes); }
     void MemSet(void* dest, int val, uint32_t bytes) { MemUtils::MemSet(dest, val, bytes); }
     int MemCmp(void* dest, void* src, uint32_t bytes) { return MemUtils::MemCmp(dest, src, bytes); }
+    
+    IntMap* IntMap_Create() { return new IntMap();}
+    void IntMap_Destroy(IntMap* ptr) { delete ptr; }
+    void IntMap_Set(IntMap* ptr, IntInt element) { ptr->set(element); }
+    void IntMap_Remove(IntMap* ptr, uint32_t key) { ptr->remove(key); }
+    uint32_t IntMap_TryGetValue(IntMap* ptr, uint32_t key) { return ptr->tryGetValue(key); }
+    int IntMap_Count(IntMap* ptr) { return (int) ptr->count(); }
+    void IntMap_Clear(IntMap* ptr) { ptr->clear();}
 }
 
 #endif //QUARTZ_CORE_LIBRARY_H
