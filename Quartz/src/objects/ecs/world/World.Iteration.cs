@@ -178,4 +178,48 @@ public partial class World {
 			a(*collection1[comp1], *collection2[comp2], *collection3[comp3], *collection4[comp4], *collection5[comp5], entity);
 		});
 	}
+
+	public unsafe delegate void ForeachComponentPtrDelegate<T1>(T1* c1, ComponentId componentId) where T1 : unmanaged, IComponent;
+	public unsafe delegate void ForeachComponentPtrDelegate<T1, T2>(T1* c1, T2* c2, EntityId entityId) where T1 : unmanaged, IComponent where T2 : unmanaged, IComponent;
+	public unsafe delegate void ForeachComponentPtrDelegate<T1, T2, T3>(T1* c1, T2* c2, T3* c3, EntityId entityId) where T1 : unmanaged, IComponent where T2 : unmanaged, IComponent where T3 : unmanaged, IComponent;
+	
+	public unsafe void ForeachComponentPtr<T1>(ForeachComponentPtrDelegate<T1> a) where T1 : unmanaged, IComponent {
+		ComponentCollection<T1> collection1 = GetComponentCollection<T1>();
+		int c = collection1.totalCount;
+		for (int i = 0; i < c; i++) {
+			if (collection1.components.emptyIndices.Contains(i)) continue;
+			ComponentId comp1 = (uint)i;
+			a(collection1[comp1], comp1);
+		}
+	}
+	
+	public unsafe void ForeachComponentPtr<T1, T2>(ForeachComponentPtrDelegate<T1, T2> a) where T1 : unmanaged, IComponent where T2 : unmanaged, IComponent {
+		ComponentCollection<T1> collection1 = GetComponentCollection<T1>();
+		ComponentCollection<T2> collection2 = GetComponentCollection<T2>();
+		int c = collection1.totalCount;
+		for (int i = 0; i < c; i++) {
+			if (collection1.components.emptyIndices.Contains(i)) continue;
+			ComponentId comp1 = (uint)i;
+			EntityId entity = collection1.GetEntityFromComponent(comp1);
+			ComponentId comp2 = collection2.GetComponentFromEntity(entity);
+			if (!comp2.isValid) return;
+			a(collection1[comp1], collection2[comp2], entity);
+		}
+	}
+	
+	public unsafe void ForeachComponentPtr<T1, T2, T3>(ForeachComponentPtrDelegate<T1, T2, T3> a) where T1 : unmanaged, IComponent where T2 : unmanaged, IComponent where T3 : unmanaged, IComponent {
+		ComponentCollection<T1> collection1 = GetComponentCollection<T1>();
+		ComponentCollection<T2> collection2 = GetComponentCollection<T2>();
+		ComponentCollection<T3> collection3 = GetComponentCollection<T3>();
+		int c = collection1.totalCount;
+		for (int i = 0; i < c; i++) {
+			if (collection1.components.emptyIndices.Contains(i)) continue;
+			ComponentId comp1 = (uint)i;
+			EntityId entity = collection1.GetEntityFromComponent(comp1);
+			ComponentId comp2 = collection2.GetComponentFromEntity(entity);
+			ComponentId comp3 = collection3.GetComponentFromEntity(entity);
+			if (!comp2.isValid || !comp3.isValid) return;
+			a(collection1[comp1], collection2[comp2], collection3[comp3], entity);
+		}
+	}
 }

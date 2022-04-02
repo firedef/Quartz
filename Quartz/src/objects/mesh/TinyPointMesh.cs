@@ -12,7 +12,7 @@ public class TinyPointMesh : IDisposable, IMesh {
 	public VBO vbo;
 	public VAO vao;
 
-	private int oldVertexCount = -1;
+	public int oldVertexCount = -1;
 
 	public TinyPointMesh(NativeList<Vertex> vertices) {
 		this.vertices = vertices;
@@ -48,7 +48,7 @@ public class TinyPointMesh : IDisposable, IMesh {
 	}
 
 	private void UpdateBuffers(bool forceFullUpdate) {
-		MeshUtils.UpdateBuffer(vertices, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw, oldVertexCount, forceFullUpdate);
+		MeshUtils.UpdateBuffer(vertices, BufferTargetARB.ArrayBuffer, BufferUsageARB.DynamicDraw, vertices.capacity, oldVertexCount, forceFullUpdate);
 		oldVertexCount = vertices.capacity;
 	}
 	

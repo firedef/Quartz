@@ -9,6 +9,10 @@ public partial class World {
 	protected const int entityArrayInitialSize = 1 << 20;
 
 	public readonly WorldId worldId;
+
+	public bool isAlive = true;
+	public bool isActive = true;
+	public bool isVisible = true;
 	
 	public Dictionary<Type, ComponentCollection> components = new();
 	public NativeListPool<Entity> entities = new(entityArrayInitialSize);

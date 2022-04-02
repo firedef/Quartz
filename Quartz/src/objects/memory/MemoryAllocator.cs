@@ -1,6 +1,7 @@
 using Quartz.core;
 using Quartz.debug.log;
 using Quartz.other;
+using Quartz.other.events;
 
 namespace Quartz.objects.memory; 
 
@@ -24,6 +25,7 @@ public static class MemoryAllocator {
 		return QuartzNative.Resize(ptr, (uint)newSizeBytes);
 	}
 
+	[CallRepeating(EventTypes.lowMemory)]
 	public static void Cleanup() {
 		QuartzNative.CleanupMemoryAllocator();
 		Log.Note($"memoryAllocator cleanup");
@@ -31,8 +33,9 @@ public static class MemoryAllocator {
 
 	public static unsafe void MemCpy<T>(T* dest, T* src, int count) where T : unmanaged => QuartzNative.MemCpy(dest, src, (uint)(count * sizeof(T))); 
 
-	public static void OnRareUpdate(float deltatime) {
-		Log.Print(ToStringMarkup());
+	[CallRepeating(EventTypes.rareUpdate)]
+	public static void OnRareUpdate() {
+		//Log.Print(ToStringMarkup());
 		allocatedPerRareUpdate = 0;
 		if (Rand.Bool(.1f)) Cleanup();
 	}

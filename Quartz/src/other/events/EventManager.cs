@@ -3,7 +3,7 @@ using Quartz.other.time;
 
 namespace Quartz.other.events; 
 
-public static class EventManager {
+public static partial class EventManager {
 	public static Action<float> onFrameUpdate = _ => { };
 	public static Action<float> onFixedUpdate = _ => { };
 	public static Action<float> onRareUpdate = _ => { };
@@ -41,21 +41,34 @@ public static class EventManager {
 		isFirstUpdate = false;
 	}
 
+	public static void OnStart() {
+		Dispatcher.global.Call(EventTypes.start);
+	}
+	
+	public static void OnQuit() {
+		Dispatcher.global.Call(EventTypes.quit);
+	}
+	
+	public static void OnLowMemory() {
+		Dispatcher.global.Call(EventTypes.lowMemory);
+	}
+
 	private static void OnFrameUpdate(float deltatime) {
-		onFrameUpdate(deltatime);
-		
 		Time.OnFrameUpdate(deltatime);
+		onFrameUpdate(deltatime);
+		Dispatcher.global.Call(EventTypes.render);
+		Dispatcher.global.Call(EventTypes.frameUpdate);
 	}
 	
 	private static void OnFixedUpdate(float deltatime) {
-		onFixedUpdate(deltatime);
-		
 		Time.OnFixedUpdate(deltatime);
+		onFixedUpdate(deltatime);
+		Dispatcher.global.Call(EventTypes.fixedUpdate);
 	}
 	
 	private static void OnRareUpdate(float deltatime) {
 		onRareUpdate(deltatime);
-
-		MemoryAllocator.OnRareUpdate(deltatime);
+		Dispatcher.global.Call(EventTypes.rareUpdate);
+		Dispatcher.global.Cleanup();
 	}
 }

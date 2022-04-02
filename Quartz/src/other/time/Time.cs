@@ -1,3 +1,5 @@
+using Quartz.other.events;
+
 namespace Quartz.other.time; 
 
 public static class Time {
