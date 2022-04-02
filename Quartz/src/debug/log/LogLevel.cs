@@ -12,8 +12,9 @@ public enum LogLevel {
 
 [Flags]
 public enum LogForm {
-	unspecified = 0b001,
-	rendererCore = 0b010,
-	renderer = 0b100,
+	unspecified = 1 << 0,
+	rendererCore = 1 << 1,
+	renderer = 1 << 2,
+	events = 1 << 3,
 	all = int.MaxValue,
 }

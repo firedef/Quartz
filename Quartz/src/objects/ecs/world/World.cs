@@ -1,25 +1,29 @@
 using Quartz.objects.ecs.components;
 using Quartz.objects.ecs.entities;
+using Quartz.objects.ecs.managed;
 using Quartz.objects.memory;
 // ReSharper disable InconsistentlySynchronizedField
 
 namespace Quartz.objects.ecs.world; 
 
 public partial class World {
+	protected static readonly ManagedListPool<World> worlds = new();
+	public static readonly World general = Create();
+	
 	protected const int entityArrayInitialSize = 1 << 20;
 
-	public readonly WorldId worldId;
+	public WorldId worldId { get; protected set; }
 
-	public bool isAlive = true;
-	public bool isActive = true;
-	public bool isVisible = true;
-	
-	public Dictionary<Type, ComponentCollection> components = new();
-	public NativeListPool<Entity> entities = new(entityArrayInitialSize);
+	public bool isAlive { get; protected set; } = true;
+	public bool isActive { get; protected set; } = true;
+	public bool isVisible { get; protected set; } = true;
+
+	public readonly Dictionary<Type, ComponentCollection> components = new();
+	public readonly NativeListPool<Entity> entities = new(entityArrayInitialSize);
 
 	public int entityCount => entities.count - entities.emptyIndices.count;
 
-	public World(WorldId worldId) => this.worldId = worldId;
+	protected World(WorldId worldId) => this.worldId = worldId;
 
 	public ComponentCollection<T> GetComponentCollection<T>() where T : unmanaged, IComponent {
 		if (components.TryGetValue(typeof(T), out ComponentCollection? v)) return (ComponentCollection<T>) v;
@@ -40,6 +44,7 @@ public partial class World {
 	public void RemoveEntity(EntityId id) {
 		foreach (ComponentCollection collection in components.Values)
 			collection.Remove(id);
+		entities.RemoveAt((int) id.id);
 	}
 
 	public EntityId GetEntityFromComponent<T>(ComponentId id) where T : unmanaged, IComponent => GetComponentCollection<T>().GetEntityFromComponent(id);
@@ -50,4 +55,21 @@ public partial class World {
 		entities[id] = entity;
 		return entity;
 	}
+	
+	public void SetActive(bool v) => isActive = v;
+	public void SetVisible(bool v) => isVisible = v;
+
+	public void Destroy() {
+		isAlive = false;
+		isActive = false;
+		worlds.RemoveAt((int) worldId.id);
+	}
+
+	public static World Create() {
+		World world = new(0);
+		int id = worlds.Add(world);
+		world.worldId = (uint) id;
+		return world;
+	}
+
 }

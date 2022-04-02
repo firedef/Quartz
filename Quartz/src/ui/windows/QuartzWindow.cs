@@ -1,14 +1,28 @@
+using System.Reflection;
 using MathStuff;
 using MathStuff.vectors;
 using OpenTK.Graphics.OpenGL.Compatibility;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using Quartz.collections;
 using Quartz.collections.shaders;
 using Quartz.core;
+using Quartz.core.collections;
+using Quartz.objects.ecs.components;
+using Quartz.objects.ecs.entities;
+using Quartz.objects.ecs.managed;
+using Quartz.objects.ecs.systems;
+using Quartz.objects.ecs.world;
 using Quartz.objects.memory;
 using Quartz.objects.mesh;
+using Quartz.objects.particles;
+using Quartz.objects.particles.custom;
+using Quartz.objects.particles.emitters;
+using Quartz.objects.scenes;
+using Quartz.other;
 using Quartz.other.events;
+using Quartz.other.time;
 using Quartz.utils;
 
 namespace Quartz.ui.windows; 
@@ -84,7 +98,34 @@ void main() {
 		GLFW.WindowHint(WindowHintInt.Samples, 4);
 	}
 
-	public static NativeList<int> list;
+	//public static DualIntMap list;
+	// public static ParticleSystem ps;
+
+	public record struct ParticleEmitterComponent(float2 pos, int count) : IComponent {
+		public float2 pos = pos;
+		public int count = count;
+	} 
+	
+	
+	private static ParticleSystem ps;
+
+	public class TestSystem : EntitySystem, IAutoEntitySystem {
+		public EventTypes types => EventTypes.render;
+		public bool repeating => true;
+		public bool continueInvoke => true;
+		public float lifetime => float.MaxValue;
+		public bool invokeWhileInactive => false;
+
+		public override unsafe void Run(World world) => world.ForeachComponentPtr<ParticleEmitterComponent>((c1, _) => {
+			float s = .1f;
+			(float2 pos, int count) = *c1;
+			ParticleData min = new() {color = color.softRed, lifetime = .2f, position = pos, velocity = 0,};
+			ParticleData max = new() {color = color.softYellow, lifetime = .5f, position = pos, velocity = 0,};
+			IParticleEmitter emitter = new ParticleEmitters.Cone(0, 0, .05f, .5f, MathF.PI * .5f, MathF.PI * .4f, 8);
+			ps.Spawn(count, min, max, emitter);
+			c1->pos.x -= .001f;
+		});
+	}
 
 	protected override unsafe void OnLoad() {
 		//void* ptr = MemoryAllocator.Allocate(55);
@@ -93,42 +134,35 @@ void main() {
 		//ptr = MemoryAllocator.Resize(ptr, 3300);
 		//MemoryAllocator.Free(ptr);
 		//ptr = MemoryAllocator.Allocate(25);
+		
+		EventManager.ProcessCurrentAssembly();
+		EventManager.OnStart();
 
-		list = new();
-		list.Add(87);
-		list.Add(3);
-		list.Add(13);
+		World world = SceneManager.current!.ecsWorld;
+		
+		EntityId e0 = world.AddEntity();
+		EntityId e1 = world.AddEntity();
+		EntityId e2 = world.AddEntity();
 
-		Console.WriteLine(list[1]);
+		*world.GetComponent<ParticleEmitterComponent>(e0) = new(new(.4f, -.2f), 5);
+		*world.GetComponent<ParticleEmitterComponent>(e1) = new(new(.8f, .3f), 100);
+		*world.GetComponent<ParticleEmitterComponent>(e2) = new(new(-.2f, -.2f), 2);
 
+		world.RegisterSystemsFromAssembly(Assembly.GetExecutingAssembly());
+		ps = new TestParticleSystem();
+		
+		Dispatcher.global.PushRepeating(() => {
+			ps.Update(Time.fixedDeltaTime);
+		}, EventTypes.fixedUpdate);
+		Dispatcher.global.PushRepeating(() => {
+			ps.Render();
+		}, EventTypes.render);
+		//main.RemoveEntity(e2);
+
+		//new TestSystem().Register(main);
+		//Dispatcher.global.PushRepeating(() => sys.Run(main), EventTypes.render);
 		shaderProgram = new(_vertexShaderSrc, _fragmentShaderSrc, _geometryShaderSrc);
 
-		const float r = .05f;
-		const float vel = .0005f;
-		const float temperature = 1500f;
-		const int c = 1_200_000;
-		Random rnd = new();
-
-		color col = "#ffaa3303";
-		color col1 = "#ffaa3388";
-
-		for (int i = 0; i < c; i++) {
-			float x = (rnd.NextSingle() * 2 - 1) * r;
-			float y = (rnd.NextSingle() * 2 - 1) * r;
-
-			float vx = (rnd.NextSingle() * 2 - 1) * vel;
-			float vy = (rnd.NextSingle() * 2 - 1) * vel;
-			
-			float t = rnd.NextSingle() * temperature;
-			
-			_points2.Add(new(new(x,y), new(vx, vy), col, new(0,0), new(t,0)));
-		}
-
-		//mesh = new(_points, _indices);
-		//mesh.topology = PrimitiveType.Triangles;
-
-		mesh2 = new(_points2.ToArray());
-		mesh2.vertices.Add(new(new(0, .7f), color.softBlue));
 		GL.Enable(EnableCap.DebugOutput);
 		GL.FrontFace(FrontFaceDirection.Cw);
 		//GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Line);
@@ -138,6 +172,7 @@ void main() {
 
 		OpenGl.CheckErrors();
 		base.OnLoad();
+		
 	}
 
 	protected override void OnUnload() {
@@ -153,88 +188,28 @@ void main() {
 	}
 
 	protected override unsafe void OnRenderFrame(FrameEventArgs args) {
-		EventManager.Update();
-		const float spd = 1f;
 		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 		shaderProgram.Bind();
-		
+
 		GL.Enable(EnableCap.Blend);
-		GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.One);
-		// GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+		//GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.One);
+		GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-		int c = mesh2.vertices.count;
-		Vertex* ptr = mesh2.vertices.ptr;
-		float time = (float)DateTime.Now.TimeOfDay.TotalMilliseconds * spd;
 
-		Random rnd = new();
-
-		float2 gravity0 = new float2(MathF.Sin(time * .00012f), MathF.Cos(time * .000008f)) * .7f;
-		float2 gravity1 = new float2(MathF.Sin(time * .0012f), MathF.Cos(time * .00008f)) * .6f;
-		float2 gravity2 = new float2(MathF.Cos(time * .0004f), MathF.Sin(time * .00003f)) * .8f;
-
-		color col0 = "#22080501";
-		color col1 = "#ee993309";
+		//if (Rand.Bool(.01f)) main.isActive = !main.isActive;
+		//if (Rand.Bool(.05f)) main.isVisible = !main.isVisible;
 		
-		Parallel.For(0, c, i => {
-			float2 vel = ptr[i].normal;
-			float2 pos = ptr[i].position.xy + vel * spd;
-			float temperature = ptr[i].uv1.x;
-
-			if (pos.x is < -1 or > 1) vel.FlipX();
-			if (pos.y is < -1 or > 1) vel.FlipY();
-
-			pos = float2.Clamp(pos, -float2.one, float2.one);
-			
-			float2 vec = (pos - gravity0) * 500;
-			float len = vec.length;
-			float g = 9.81f / (len * len * len);
-			vel -= vec * g * .5f * spd;
-			temperature += 1000f / len;
-			
-			vec = (pos - gravity1) * 500;
-			len = vec.length;
-			g = 9.81f / (len * len * len);
-			vel -= vec * g * .5f * spd;
-			temperature += 1000f / len;
-			
-			vec = (pos - gravity2) * 500;
-			len = vec.length;
-			g = 9.81f / (len * len * len);
-			vel -= vec * g * .5f * spd;
-			temperature += 1000f / len;
-
-			// for (int j = 0; j < gC; j++) {
-			// 	float2 vec = (pos - gravity[j].xy) * 1000000;
-			// 	float len = vec.length;
-			// 	if (len < .1f) continue;
-			// 	len -= .01f;
-			// 	float g = 9.81f / (len * len * len);
-			// 	vel -= vec * g * .001f * gravity[j].z;
-			// }
-
-			temperature *= .996f / spd;
-			ptr[i].position = pos;
-			ptr[i].normal = vel;
-			ptr[i].uv1 = new(temperature, 0);
-			float tempV = math.min(temperature * .0001f, 1f);
-			ptr[i].color = color.Lerp(col0, col1, tempV);
-		});
-
-		//mesh.updateRequired = true;
-		// Vertex vert = mesh2.vertices[^1];
-		// vert.position.x = MathF.Sin((float)DateTime.Now.TimeOfDay.TotalMilliseconds * .001f) * .5f;
-		// //vert.position.z = -.1f;
-		// vert.color = color.yellow;
-		// mesh2.vertices[^1] = vert;
-
+		if (Rand.Bool(.002f)) SceneManager.CloseScene(SceneManager.last!);
 		GL.Enable(EnableCap.Multisample);
+		
+		EventManager.Update();
+		
+		//ps.Update(Time.frameDeltaTime);
+		//ps.Render();
 		//if (mesh.PrepareForRender())
 		//	GL.DrawElements(mesh.topology, mesh.indices.count, DrawElementsType.UnsignedShort, 0);
 
-
-		if (mesh2.PrepareForRender()) {
-			GL.DrawArrays(mesh2.getTopology, 0, mesh2.vertices.count);
-		}
+		//ps.Render();
 
 		//ImGui.GetIO().
 		SwapBuffers();
