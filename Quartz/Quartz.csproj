@@ -24,10 +24,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="src\objects\ecs\systems" />
-    </ItemGroup>
-
-    <ItemGroup>
       <None Remove="libs\libQuartz_Core.so" />
       <Content Include="libs\libQuartz_Core.so">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>

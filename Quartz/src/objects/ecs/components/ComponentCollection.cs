@@ -2,11 +2,12 @@ using System.Collections;
 using Quartz.collections;
 using Quartz.objects.ecs.entities;
 using Quartz.objects.memory;
+// ReSharper disable InconsistentlySynchronizedField
 
 namespace Quartz.objects.ecs.components;
 
 public abstract class ComponentCollection {
-	protected const int componentArrayInitialSize = 1 << 20;
+	protected const int componentArrayInitialSize = 1 << 16;
 
 	public DualIntMap entitiesComponentsMap = new();
 	
@@ -14,6 +15,14 @@ public abstract class ComponentCollection {
 	public abstract int totalCount { get; }
 	public abstract int componentCount { get; }
 	public abstract int elementSize { get; }
+
+	public abstract void Remove(EntityId entityId);
+	
+	public ComponentId GetComponentFromEntity(EntityId entityId) => entitiesComponentsMap.GetVal(entityId.id);
+	public EntityId GetEntityFromComponent(ComponentId component) => entitiesComponentsMap.GetKey(component);
+
+	public bool ContainsEntity(EntityId entityId) => entitiesComponentsMap.ContainsKey(entityId.id);
+	public bool ContainsComponent(ComponentId component) => entitiesComponentsMap.ContainsVal(component);
 }
 
 public class ComponentCollection<T> : ComponentCollection, IEnumerable<T> where T : unmanaged, IComponent {
@@ -25,51 +34,65 @@ public class ComponentCollection<T> : ComponentCollection, IEnumerable<T> where 
 	public override int totalCount => components.count;
 	public override int componentCount => components.count - components.emptyIndices.count;
 	public override unsafe int elementSize => sizeof(T);
+	
+	private readonly object _lock = new();
 
 #endregion fields
 
 #region elements
 
-	public uint Set(EntityId entity, T component) {
-		uint componentId = TryGetId(entity);
-		if (componentId != uint.MaxValue) {
-			components[(int)componentId] = component;
+	public unsafe void DisposeElement(ComponentId id) {
+		if (components.ptr[id] is IDisposable d) d.Dispose();
+	}
+
+	public ComponentId Set(EntityId entityId, T component) {
+		ComponentId componentId = GetComponentFromEntity(entityId);
+		if (componentId.isValid) {
+			components[(int)componentId.id] = component;
 			return componentId;
 		}
-		componentId = (uint) components.Add(component);
-		entitiesComponentsMap.Set(entity.id, componentId);
+		lock (_lock) {
+			componentId = (uint) components.Add(component);
+			entitiesComponentsMap.Set(entityId.id, componentId);
 		
-		return componentId;
+			return componentId;
+		}
 	}
 
-	public void Remove(EntityId entity) {
-		uint componentId = TryGetId(entity);
-		if (componentId == uint.MaxValue) return;
-		components.RemoveAt((int)componentId);
-		entitiesComponentsMap.Remove(entity.id, componentId);
+	public override void Remove(EntityId entityId) {
+		ComponentId componentId = GetComponentFromEntity(entityId);
+		if (!componentId.isValid) return;
+		lock (_lock) {
+			components.RemoveAt((int)componentId.id);
+			DisposeElement(componentId);
+			entitiesComponentsMap.Remove(entityId.id, componentId);
+		}
 	}
 	
-	public uint TryGetId(EntityId entity) => entitiesComponentsMap[entity.id];
 	
-	public unsafe T* IndexToPtr(uint componentId) => components.ptr + componentId;
+	public unsafe T* IndexToPtr(ComponentId componentId) => components.ptr + componentId;
 
-	public unsafe T* TryGet(EntityId entity) {
-		uint componentId = TryGetId(entity);
-		return componentId == uint.MaxValue ? null : IndexToPtr(componentId);
+	public unsafe T* TryGet(EntityId entityId) {
+		ComponentId componentId = GetComponentFromEntity(entityId);
+		return componentId.isValid ? IndexToPtr(componentId) : null;
 	}
 
-	public unsafe T* GetOrAdd(EntityId entity) {
-		uint componentId = TryGetId(entity);
-		if (componentId != uint.MaxValue) return IndexToPtr(componentId);
-		
-		componentId = (uint) components.Add(new());
-		entitiesComponentsMap.Set(entity.id, componentId);
-		return IndexToPtr(componentId);
+	public unsafe T* GetOrAdd(EntityId entityId) {
+		ComponentId componentId = GetComponentFromEntity(entityId);
+		if (componentId.isValid) return IndexToPtr(componentId);
+
+		lock (_lock) {
+			componentId = (uint) components.Add(new());
+			entitiesComponentsMap.Set(entityId.id, componentId);
+			return IndexToPtr(componentId);
+		}
 	}
 
 	public void Clear() {
-		components.Clear();
-		entitiesComponentsMap.Clear();
+		lock (_lock) {
+			components.Clear();
+			entitiesComponentsMap.Clear();
+		}
 	}
 
 	public unsafe T this[EntityId id] {
@@ -77,8 +100,8 @@ public class ComponentCollection<T> : ComponentCollection, IEnumerable<T> where 
 		set => Set(id, value);
 	}
 	
-	public unsafe T* this[uint id] => GetOrAdd(id);
-	public unsafe T* this[int id] => GetOrAdd((uint) id);
+	public unsafe T* this[ComponentId id] => components.ptr + id;
+	public unsafe T* this[int id] => components.ptr + id;
 
 	public int GetNextComponentIndex(int index) {
 		index++;
