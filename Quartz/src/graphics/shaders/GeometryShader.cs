@@ -1,4 +1,4 @@
-namespace Quartz.collections.shaders; 
+namespace Quartz.graphics.shaders; 
 
 public struct GeometryShader : IShaderPart {
 	public string? source { get; set; }

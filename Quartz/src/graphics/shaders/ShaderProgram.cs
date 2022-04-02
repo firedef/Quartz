@@ -3,7 +3,7 @@ using OpenTK.Graphics.OpenGL.Compatibility;
 using Quartz.debug.log;
 using Quartz.utils;
 
-namespace Quartz.collections.shaders; 
+namespace Quartz.graphics.shaders; 
 
 public struct ShaderProgram {
 	public static readonly ShaderProgram empty = new();

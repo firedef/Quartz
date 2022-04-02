@@ -29,7 +29,7 @@ public struct VBO : IDisposable {
 		if (boundBuffer.handle == handle) return;
 		boundBuffer = handle;
 		GL.BindBuffer(target, this);
-		Log.Minimal($"bound VBO {handle}");
+		//Log.Minimal($"bound VBO {handle}");
 	}
 
 	public static VBO Generate() {
@@ -40,7 +40,7 @@ public struct VBO : IDisposable {
 
 	public static void Unbind() {
 		if (boundBuffer.handle == 0) return;
-		Log.Minimal($"unbound VBO {boundBuffer.handle}");
+		//Log.Minimal($"unbound VBO {boundBuffer.handle}");
 		boundBuffer = empty;
 		GL.BindBuffer(target, BufferHandle.Zero);
 	}

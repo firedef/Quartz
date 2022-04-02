@@ -40,6 +40,10 @@ public static partial class EventManager {
 
 		isFirstUpdate = false;
 	}
+	
+	public static void OnRender() {
+		if (!isFirstUpdate) Dispatcher.global.Call(EventTypes.render);
+	}
 
 	public static void OnStart() {
 		Dispatcher.global.Call(EventTypes.start);
@@ -56,7 +60,6 @@ public static partial class EventManager {
 	private static void OnFrameUpdate(float deltatime) {
 		Time.OnFrameUpdate(deltatime);
 		onFrameUpdate(deltatime);
-		Dispatcher.global.Call(EventTypes.render);
 		Dispatcher.global.Call(EventTypes.frameUpdate);
 	}
 	

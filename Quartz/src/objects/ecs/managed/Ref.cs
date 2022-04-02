@@ -5,8 +5,8 @@ public readonly struct Ref<T> : IDisposable {
 	public bool isValid => id != -1 && EcsManagedData<T>.Contains(this);
 	
 	public T? v {
-		get => isValid ? EcsManagedData<T>.items.storage[id] : default;
-		set => EcsManagedData<T>.Set(this, value!);
+		get => isValid ? EcsManagedData<T>.items.storage[id].v : default;
+		//set => EcsManagedData<T>.Set(this, value!);
 	}
 
 	public Ref(int id) => this.id = id;
@@ -14,7 +14,7 @@ public readonly struct Ref<T> : IDisposable {
 
 	public void Dispose() => EcsManagedData<T>.Remove(this);
 
-	public static implicit operator T(Ref<T> v) => v.v;
+	public static implicit operator T(Ref<T> v) => v.v!;
 	public static implicit operator Ref<T>(T v) => new(v);
 
 	public override string ToString() => v?.ToString() ?? "null";

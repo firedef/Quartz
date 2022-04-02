@@ -1,7 +1,7 @@
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL.Compatibility;
-using Quartz.collections.shaders;
 using Quartz.debug.log;
+using Quartz.graphics.shaders;
 
 namespace Quartz.utils; 
 
@@ -12,7 +12,7 @@ public static class OpenGl {
 		if (!v.isGenerated) v.Compile();
 		if (boundShaderProgram == v) return;
 		boundShaderProgram = v;
-		Log.Minimal($"bound shader {v.programHandle.Handle}", LogForm.rendererCore);
+		//Log.Minimal($"bound shader {v.programHandle.Handle}", LogForm.rendererCore);
 		GL.UseProgram(v.programHandle);
 	}
 	

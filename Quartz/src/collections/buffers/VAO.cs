@@ -28,7 +28,7 @@ public struct VAO : IDisposable {
 		if (boundBuffer.handle == handle) return;
 		GL.BindVertexArray(this);
 		boundBuffer = handle;
-		Log.Minimal($"bound VAO {handle}");
+		//Log.Minimal($"bound VAO {handle}");
 	}
 
 	public static VAO Generate() {
@@ -39,7 +39,7 @@ public struct VAO : IDisposable {
 
 	public static void Unbind() {
 		if (boundBuffer.handle == 0) return;
-		Log.Minimal($"unbound VAO {boundBuffer.handle}");
+		//Log.Minimal($"unbound VAO {boundBuffer.handle}");
 		boundBuffer = empty;
 		GL.BindVertexArray(VertexArrayHandle.Zero);
 	}

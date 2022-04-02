@@ -6,10 +6,17 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Quartz.collections;
-using Quartz.collections.shaders;
 using Quartz.core;
 using Quartz.core.collections;
+using Quartz.graphics.camera;
+using Quartz.graphics.render;
+using Quartz.graphics.render.renderers;
+using Quartz.graphics.render.targets;
+using Quartz.graphics.shaders;
+using Quartz.graphics.shaders.materials;
 using Quartz.objects.ecs.components;
+using Quartz.objects.ecs.components.types.graphics;
+using Quartz.objects.ecs.components.types.transform;
 using Quartz.objects.ecs.entities;
 using Quartz.objects.ecs.managed;
 using Quartz.objects.ecs.systems;
@@ -28,6 +35,7 @@ using Quartz.utils;
 namespace Quartz.ui.windows; 
 
 public class QuartzWindow : GameWindow {
+	public static QuartzWindow? mainWindow;
 	public ShaderProgram shaderProgram;
 	public Mesh mesh;
 	public TinyPointMesh mesh2;
@@ -82,12 +90,42 @@ void main() {
 	EmitVertex();
 }
 ";
+	
+	
+	
+	
+	
+	
+	
+	private const string _vertexShader1Src = @"
+#version 330
+in layout(location=0) vec3 position;
+in layout(location=1) vec3 normal;
+in layout(location=2) vec4 color;
+in layout(location=3) vec2 uv0;
+in layout(location=4) vec2 uv1;
+
+uniform mat4 mvp;
+out vec4 v_col;
+
+void main(void) {
+	gl_Position = vec4(position, 1.0) * mvp;
+	v_col = color.bgra;
+}";
+
+	private const string _fragmentShader1Src = @"
+#version 330
+in vec4 v_col;
+out vec4 outputColor;
+void main(void) { 
+	outputColor = v_col; 
+}";
 
 	private readonly Vertex[] _points = {
-		new(new(-0.5f, -0.5f), color.white),
+		new(new(-0.4f, -0.5f), color.white),
 		new(new(-0.5f,  0.5f), color.softRed),
 		new(new( 0.5f,  0.5f), color.softPurple),
-		new(new( 0.5f, -0.5f), color.softCyan),
+		new(new( 0.2f, -0.5f), color.softCyan),
 	};
 
 	private readonly ushort[] _indices = { 0, 1, 2, 0, 2, 3 };
@@ -97,9 +135,6 @@ void main() {
 	public QuartzWindow(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings) : base(gameWindowSettings, nativeWindowSettings) {
 		GLFW.WindowHint(WindowHintInt.Samples, 4);
 	}
-
-	//public static DualIntMap list;
-	// public static ParticleSystem ps;
 
 	public record struct ParticleEmitterComponent(float2 pos, int count) : IComponent {
 		public float2 pos = pos;
@@ -124,17 +159,18 @@ void main() {
 			IParticleEmitter emitter = new ParticleEmitters.Cone(0, 0, .05f, .5f, MathF.PI * .5f, MathF.PI * .4f, 8);
 			ps.Spawn(count, min, max, emitter);
 			c1->pos.x -= .001f;
+			Camera.main.position.x -= .0025f;
+			Camera.main.position.y += .001f;
 		});
 	}
 
 	protected override unsafe void OnLoad() {
-		//void* ptr = MemoryAllocator.Allocate(55);
-		//ptr = MemoryAllocator.Allocate(95);
-		//ptr = MemoryAllocator.Resize(ptr, 33);
-		//ptr = MemoryAllocator.Resize(ptr, 3300);
-		//MemoryAllocator.Free(ptr);
-		//ptr = MemoryAllocator.Allocate(25);
-		
+		mainWindow ??= this;
+		AppDomain.CurrentDomain.ProcessExit += (_,_) => OnUnload();
+
+		Camera cam = new();
+		cam.renderer.targets.Add(new CameraRenderTarget());
+
 		EventManager.ProcessCurrentAssembly();
 		EventManager.OnStart();
 
@@ -148,20 +184,35 @@ void main() {
 		*world.GetComponent<ParticleEmitterComponent>(e1) = new(new(.8f, .3f), 100);
 		*world.GetComponent<ParticleEmitterComponent>(e2) = new(new(-.2f, -.2f), 2);
 
+		Material mat = new();
+		mat.shader = new(_vertexShader1Src, _fragmentShader1Src);
+		
+		mesh = new(_points, _indices);
+		
+		*world.GetComponent<RenderableComponent>(e0) = new(mat, mesh, 0, RenderingPass.opaque);
+		*world.GetComponent<TransformComponent>(e0) = new(new float2(2,0), 4);
+		
+		*world.GetComponent<RenderableComponent>(e1) = new(mat, mesh, 0, RenderingPass.opaque);
+		*world.GetComponent<TransformComponent>(e1) = new(new float2(10,0), 4);
+		
+		*world.GetComponent<RenderableComponent>(e2) = new(mat, mesh, 0, RenderingPass.opaque);
+		*world.GetComponent<TransformComponent>(e2) = new(new float2(-15,0), 4);
+
 		world.RegisterSystemsFromAssembly(Assembly.GetExecutingAssembly());
 		ps = new TestParticleSystem();
 		
 		Dispatcher.global.PushRepeating(() => {
 			ps.Update(Time.fixedDeltaTime);
 		}, EventTypes.fixedUpdate);
+		shaderProgram = new(_vertexShaderSrc, _fragmentShaderSrc, _geometryShaderSrc);
 		Dispatcher.global.PushRepeating(() => {
+			shaderProgram.Bind();
 			ps.Render();
 		}, EventTypes.render);
 		//main.RemoveEntity(e2);
 
 		//new TestSystem().Register(main);
 		//Dispatcher.global.PushRepeating(() => sys.Run(main), EventTypes.render);
-		shaderProgram = new(_vertexShaderSrc, _fragmentShaderSrc, _geometryShaderSrc);
 
 		GL.Enable(EnableCap.DebugOutput);
 		GL.FrontFace(FrontFaceDirection.Cw);
@@ -176,44 +227,30 @@ void main() {
 	}
 
 	protected override void OnUnload() {
-		mesh.Dispose();
-		shaderProgram.Dispose();
-		
-		base.OnUnload();
+		EventManager.OnQuit();
+		// mesh.Dispose();
+		// shaderProgram.Dispose();
+		//
+		// base.OnUnload();
 	}
 
 	protected override void OnResize(ResizeEventArgs e) {
+		Camera.main!.targetSize = new(e.Width, e.Height);
 		GL.Viewport(0,0, e.Width, e.Height);
 		base.OnResize(e);
 	}
 
 	protected override unsafe void OnRenderFrame(FrameEventArgs args) {
-		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-		shaderProgram.Bind();
-
-		GL.Enable(EnableCap.Blend);
-		//GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.One);
-		GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-
-
-		//if (Rand.Bool(.01f)) main.isActive = !main.isActive;
-		//if (Rand.Bool(.05f)) main.isVisible = !main.isVisible;
-		
-		if (Rand.Bool(.002f)) SceneManager.CloseScene(SceneManager.last!);
-		GL.Enable(EnableCap.Multisample);
+		Camera.main!.UpdateTransform();
 		
 		EventManager.Update();
-		
-		//ps.Update(Time.frameDeltaTime);
-		//ps.Render();
-		//if (mesh.PrepareForRender())
-		//	GL.DrawElements(mesh.topology, mesh.indices.count, DrawElementsType.UnsignedShort, 0);
-
-		//ps.Render();
-
-		//ImGui.GetIO().
-		SwapBuffers();
-		
-		base.OnRenderFrame(args);
+		RenderManager.Render();
+		//int b = 0;
+		//GL.GetInteger(GetPName.RenderbufferBinding, ref b);
+		//
+		//Console.WriteLine(b);
+		// if (!_renderTarget.Bind()) return;
+		// shaderProgram.Bind();
+		// _renderTarget.UnBind();
 	}
 }
