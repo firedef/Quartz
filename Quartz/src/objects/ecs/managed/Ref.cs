@@ -18,4 +18,9 @@ public readonly struct Ref<T> : IDisposable {
 	public static implicit operator Ref<T>(T v) => new(v);
 
 	public override string ToString() => v?.ToString() ?? "null";
+
+	public Ref<T> Copy() {
+		if (isValid) EcsManagedData<T>.Ref(id);
+		return this;
+	}
 }

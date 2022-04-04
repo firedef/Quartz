@@ -14,6 +14,7 @@ using Quartz.graphics.render.renderers;
 using Quartz.graphics.render.targets;
 using Quartz.graphics.shaders;
 using Quartz.graphics.shaders.materials;
+using Quartz.objects.ecs.archetypes;
 using Quartz.objects.ecs.components;
 using Quartz.objects.ecs.components.types.graphics;
 using Quartz.objects.ecs.components.types.transform;
@@ -37,8 +38,6 @@ namespace Quartz.ui.windows;
 public class QuartzWindow : GameWindow {
 	public static QuartzWindow? mainWindow;
 	public ShaderProgram shaderProgram;
-	public Mesh mesh;
-	public TinyPointMesh mesh2;
 
 	private const string _vertexShaderSrc = @"
 #version 330
@@ -144,14 +143,14 @@ void main(void) {
 	
 	private static ParticleSystem ps;
 
-	public class TestSystem : EntitySystem, IAutoEntitySystem {
+	public class ParticleEmitTestSystem : EntitySystem, IAutoEntitySystem {
 		public EventTypes types => EventTypes.render;
 		public bool repeating => true;
 		public bool continueInvoke => true;
 		public float lifetime => float.MaxValue;
 		public bool invokeWhileInactive => false;
 
-		public override unsafe void Run(World world) => world.ForeachComponentPtr<ParticleEmitterComponent>((c1, _) => {
+		public override unsafe void Run(World world) => world.Foreach<ParticleEmitterComponent>((c1) => {
 			float s = .1f;
 			(float2 pos, int count) = *c1;
 			ParticleData min = new() {color = color.softRed, lifetime = .2f, position = pos, velocity = 0,};
@@ -159,9 +158,21 @@ void main(void) {
 			IParticleEmitter emitter = new ParticleEmitters.Cone(0, 0, .05f, .5f, MathF.PI * .5f, MathF.PI * .4f, 8);
 			ps.Spawn(count, min, max, emitter);
 			c1->pos.x -= .001f;
-			Camera.main.position.x -= .0025f;
-			Camera.main.position.y += .001f;
+			//Camera.main.position.x -= .0025f;
+			//Camera.main.position.y += .001f;
 		});
+		
+		// public override unsafe void Run(World world) => world.ForeachComponentPtr<ParticleEmitterComponent>((c1, _) => {
+		// 	float s = .1f;
+		// 	(float2 pos, int count) = *c1;
+		// 	ParticleData min = new() {color = color.softRed, lifetime = .2f, position = pos, velocity = 0,};
+		// 	ParticleData max = new() {color = color.softYellow, lifetime = .5f, position = pos, velocity = 0,};
+		// 	IParticleEmitter emitter = new ParticleEmitters.Cone(0, 0, .05f, .5f, MathF.PI * .5f, MathF.PI * .4f, 8);
+		// 	ps.Spawn(count, min, max, emitter);
+		// 	c1->pos.x -= .001f;
+		// 	Camera.main.position.x -= .0025f;
+		// 	Camera.main.position.y += .001f;
+		// });
 	}
 
 	protected override unsafe void OnLoad() {
@@ -174,45 +185,61 @@ void main(void) {
 		EventManager.ProcessCurrentAssembly();
 		EventManager.OnStart();
 
+		// ArchetypeRoot root = new();
+		// Archetype archetype = root.FindOrCreateArchetype<ParticleEmitterComponent, RenderableComponent, TransformComponent>();
+		// root.AddEntity(0, typeof(ParticleEmitterComponent));
+		// root.AddEntity(1, typeof(ParticleEmitterComponent));
+		// root.AddEntity(2, typeof(ParticleEmitterComponent));
+		//
+		// Material mat = new(new(_vertexShader1Src, _fragmentShader1Src));
+		// Mesh mesh = new(_points, _indices);
+		//
+		// *root.GetComponent<RenderableComponent>(0) = new(mat, mesh, 0, RenderingPass.opaque);
+		// *root.GetComponent<RenderableComponent>(1) = new(mat, mesh, 0, RenderingPass.opaque);
+		// *root.GetComponent<RenderableComponent>(2) = new(mat, mesh, 0, RenderingPass.transparent);
+		//
+		// *root.GetComponent<TransformComponent>(0) = new(new float2(-15,0), 4);
+		// *root.GetComponent<TransformComponent>(1) = new(new float2(-5,9), 6);
+		// *root.GetComponent<TransformComponent>(2) = new(new float2(11, 2), 2);
+		//
+		// //Console.WriteLine(root.archetypes.Count);
+		// Console.WriteLine(root.RemoveComponent<TransformComponent>(1));
+		// //root.RemoveEntity(0);
+		// //root.RemoveEntity(1);
+		//
+		// root.Foreach<TransformComponent, RenderableComponent>((c0, c1) => Console.WriteLine("\n\n\n---\n"+*c0+"\n"+*c1));
+
 		World world = SceneManager.current!.ecsWorld;
 		
-		EntityId e0 = world.AddEntity();
-		EntityId e1 = world.AddEntity();
-		EntityId e2 = world.AddEntity();
+		EntityId e0 = world.CreateEntity<ParticleEmitterComponent>();
+		EntityId e1 = world.CreateEntity<ParticleEmitterComponent>();
+		EntityId e2 = world.CreateEntity<ParticleEmitterComponent>();
+		
+		*world.Comp<ParticleEmitterComponent>(e0) = new(new(.4f, -.2f), 5);
+		*world.Comp<ParticleEmitterComponent>(e1) = new(new(.8f, .3f), 100);
+		*world.Comp<ParticleEmitterComponent>(e2) = new(new(-.2f, -.2f), 2);
+		
+		Material mat = new(new(_vertexShader1Src, _fragmentShader1Src));
+		Mesh mesh = new(_points, _indices);
+		
+		for (int i = 0; i < 100_000; i++) {
+			EntityId e3 = world.CreateEntity<RenderableComponent, TransformComponent, OcclusionComponent>();
+			*world.Comp<RenderableComponent>(e3) = new(mat, mesh, 0, RenderingPass.opaque);
+			*world.Comp<TransformComponent>(e3) = new(new float2(Rand.Range(-100,100),Rand.Range(-10,10)), Rand.Range(.005f,.05f));
+		}
 
-		*world.GetComponent<ParticleEmitterComponent>(e0) = new(new(.4f, -.2f), 5);
-		*world.GetComponent<ParticleEmitterComponent>(e1) = new(new(.8f, .3f), 100);
-		*world.GetComponent<ParticleEmitterComponent>(e2) = new(new(-.2f, -.2f), 2);
-
-		Material mat = new();
-		mat.shader = new(_vertexShader1Src, _fragmentShader1Src);
-		
-		mesh = new(_points, _indices);
-		
-		*world.GetComponent<RenderableComponent>(e0) = new(mat, mesh, 0, RenderingPass.opaque);
-		*world.GetComponent<TransformComponent>(e0) = new(new float2(2,0), 4);
-		
-		*world.GetComponent<RenderableComponent>(e1) = new(mat, mesh, 0, RenderingPass.opaque);
-		*world.GetComponent<TransformComponent>(e1) = new(new float2(10,0), 4);
-		
-		*world.GetComponent<RenderableComponent>(e2) = new(mat, mesh, 0, RenderingPass.opaque);
-		*world.GetComponent<TransformComponent>(e2) = new(new float2(-15,0), 4);
+		//Console.WriteLine(EcsManagedData<Material>.items.storage.Count);
 
 		world.RegisterSystemsFromAssembly(Assembly.GetExecutingAssembly());
 		ps = new TestParticleSystem();
-		
-		Dispatcher.global.PushRepeating(() => {
-			ps.Update(Time.fixedDeltaTime);
-		}, EventTypes.fixedUpdate);
 		shaderProgram = new(_vertexShaderSrc, _fragmentShaderSrc, _geometryShaderSrc);
+		
+		Dispatcher.global.PushRepeating(() => ps.Update(Time.fixedDeltaTime), EventTypes.fixedUpdate);
 		Dispatcher.global.PushRepeating(() => {
 			shaderProgram.Bind();
 			ps.Render();
 		}, EventTypes.render);
-		//main.RemoveEntity(e2);
-
-		//new TestSystem().Register(main);
-		//Dispatcher.global.PushRepeating(() => sys.Run(main), EventTypes.render);
+		//world.RemoveEntity(e2);
 
 		GL.Enable(EnableCap.DebugOutput);
 		GL.FrontFace(FrontFaceDirection.Cw);

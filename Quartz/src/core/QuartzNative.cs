@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Security;
 using Quartz.core.collections;
 
 namespace Quartz.core; 

@@ -28,6 +28,18 @@
       <Content Include="libs\libQuartz_Core.so">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
+      <None Update="src\objects\ecs\filters\EcsFilterGen.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>EcsFilterGen.cs</LastGenOutput>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="src\objects\ecs\filters\EcsFilterGen.cs">
+        <AutoGen>True</AutoGen>
+        <DesignTime>True</DesignTime>
+        <DependentUpon>EcsFilterGen.tt</DependentUpon>
+      </Compile>
     </ItemGroup>
 
     <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

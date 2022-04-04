@@ -1,0 +1,76 @@
+<#@ template language="C#v3.5" #>
+<#@ assembly name="System.Core"#>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+using Quartz.objects.ecs.components;
+using Quartz.objects.ecs.archetypes;
+
+namespace Quartz.objects.ecs.filters;
+<#
+    const int genericCountMax = 8;
+    string[] types = {"Include", "Exclude", "And", "Or", "Not"};
+    (int min, int max)[] genericCountRanges = {(1,genericCountMax), (1,genericCountMax), (2,genericCountMax), (2,genericCountMax), (1,1)};
+
+    for (int i = 0; i < types.Length; i++) {
+        string filterName = types[i];
+        for (int genericCount = genericCountRanges[i].min; genericCount <= genericCountRanges[i].max; genericCount++) {
+            int[] genericIndices = Enumerable.Range(1, genericCount).ToArray();
+            string generics = string.Join(", ", genericIndices.Select(v => $"T{v}"));
+            string typeName = $"{filterName}<{generics}>";
+            string genericTypeArray = $"new[] {{{string.Join(", ", genericIndices.Select(v => $"typeof(T{v})"))}}}";
+#>
+
+public readonly struct <#=typeName#> : IEcsFilter
+    <#= GetGenericWhere(1, GetGenericConstrains())#> 
+{
+    public Type[] GetTypeArray() => <#= genericTypeArray#>;
+
+    public bool Filter(Archetype archetype) { <#= filterName switch {
+    "Include" => GenIncludeFilter(),
+    "Exclude" => GenExcludeFilter(),
+    "And" => GenAndFilter(),
+    "Or" => GenOrFilter(),
+    "Not" => GenNotFilter(),
+    _ => "", }#>
+    }
+}
+<#
+
+            string GetGenericWhere(int indent, params string[] where) => string.Join("\n" + Indent("", indent), genericIndices.Select(v => $"where T{v} : {string.Join(", ", where)}"));
+
+            string[] GetGenericConstrains() {
+                switch (filterName) {
+                    case "Include":
+                    case "Exclude": return new[] {"unmanaged", "IComponent"};
+                    case "And":
+                    case "Or":
+                    case "Not": return new[] {"IEcsFilter", "new()"};
+                    default:return Array.Empty<string>();
+                }
+            }
+            
+            string GenIncludeFilter() => $@"
+        if (archetype.componentTypes.Length < {genericCount}) return false;
+        {string.Join("\n" + Indent("",2), genericIndices.Select(v => $"if (!archetype.ContainsComponent(typeof(T{v}))) return false;"))}
+        return true;";
+            
+            string GenExcludeFilter() => $@"
+        if (archetype.componentTypes.Length < {genericCount}) return true;
+        {string.Join("\n" + Indent("",2), genericIndices.Select(v => $"if (archetype.ContainsComponent(typeof(T{v}))) return false;"))}
+        return true;";
+            
+            string GenAndFilter() => $@"
+        return {string.Join(" && ", genericIndices.Select(v => $"new T{v}().Filter(archetype)"))};";
+            
+            string GenOrFilter() => $@"
+        return {string.Join(" || ", genericIndices.Select(v => $"new T{v}().Filter(archetype)"))};";
+            
+            string GenNotFilter() => $@"
+        return !new T1().Filter(archetype);";
+        }
+    }
+
+    string Indent(string s, int l) => new string(' ', l * 4) + s;
+#>
