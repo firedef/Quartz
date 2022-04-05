@@ -3,7 +3,7 @@ using Quartz.objects.ecs.archetypes;
 
 namespace Quartz.objects.ecs.filters;
 
-public readonly struct Include<T1> : IEcsFilter
+public readonly struct All<T1> : IEcsFilter
     where T1 : unmanaged, IComponent 
 {
     public Type[] GetTypeArray() => new[] {typeof(T1)};
@@ -15,7 +15,7 @@ public readonly struct Include<T1> : IEcsFilter
     }
 }
 
-public readonly struct Include<T1, T2> : IEcsFilter
+public readonly struct All<T1, T2> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent 
 {
@@ -29,7 +29,7 @@ public readonly struct Include<T1, T2> : IEcsFilter
     }
 }
 
-public readonly struct Include<T1, T2, T3> : IEcsFilter
+public readonly struct All<T1, T2, T3> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent
     where T3 : unmanaged, IComponent 
@@ -45,7 +45,7 @@ public readonly struct Include<T1, T2, T3> : IEcsFilter
     }
 }
 
-public readonly struct Include<T1, T2, T3, T4> : IEcsFilter
+public readonly struct All<T1, T2, T3, T4> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent
     where T3 : unmanaged, IComponent
@@ -63,7 +63,7 @@ public readonly struct Include<T1, T2, T3, T4> : IEcsFilter
     }
 }
 
-public readonly struct Include<T1, T2, T3, T4, T5> : IEcsFilter
+public readonly struct All<T1, T2, T3, T4, T5> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent
     where T3 : unmanaged, IComponent
@@ -83,7 +83,7 @@ public readonly struct Include<T1, T2, T3, T4, T5> : IEcsFilter
     }
 }
 
-public readonly struct Include<T1, T2, T3, T4, T5, T6> : IEcsFilter
+public readonly struct All<T1, T2, T3, T4, T5, T6> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent
     where T3 : unmanaged, IComponent
@@ -105,7 +105,7 @@ public readonly struct Include<T1, T2, T3, T4, T5, T6> : IEcsFilter
     }
 }
 
-public readonly struct Include<T1, T2, T3, T4, T5, T6, T7> : IEcsFilter
+public readonly struct All<T1, T2, T3, T4, T5, T6, T7> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent
     where T3 : unmanaged, IComponent
@@ -129,7 +129,7 @@ public readonly struct Include<T1, T2, T3, T4, T5, T6, T7> : IEcsFilter
     }
 }
 
-public readonly struct Include<T1, T2, T3, T4, T5, T6, T7, T8> : IEcsFilter
+public readonly struct All<T1, T2, T3, T4, T5, T6, T7, T8> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent
     where T3 : unmanaged, IComponent
@@ -155,7 +155,151 @@ public readonly struct Include<T1, T2, T3, T4, T5, T6, T7, T8> : IEcsFilter
     }
 }
 
-public readonly struct Exclude<T1> : IEcsFilter
+public readonly struct Any<T1> : IEcsFilter
+    where T1 : unmanaged, IComponent 
+{
+    public Type[] GetTypeArray() => new[] {typeof(T1)};
+
+    public bool Filter(Archetype archetype) { 
+        if (archetype.ContainsComponent(typeof(T1))) return true;
+        return false;
+    }
+}
+
+public readonly struct Any<T1, T2> : IEcsFilter
+    where T1 : unmanaged, IComponent
+    where T2 : unmanaged, IComponent 
+{
+    public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2)};
+
+    public bool Filter(Archetype archetype) { 
+        if (archetype.ContainsComponent(typeof(T1))) return true;
+        if (archetype.ContainsComponent(typeof(T2))) return true;
+        return false;
+    }
+}
+
+public readonly struct Any<T1, T2, T3> : IEcsFilter
+    where T1 : unmanaged, IComponent
+    where T2 : unmanaged, IComponent
+    where T3 : unmanaged, IComponent 
+{
+    public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2), typeof(T3)};
+
+    public bool Filter(Archetype archetype) { 
+        if (archetype.ContainsComponent(typeof(T1))) return true;
+        if (archetype.ContainsComponent(typeof(T2))) return true;
+        if (archetype.ContainsComponent(typeof(T3))) return true;
+        return false;
+    }
+}
+
+public readonly struct Any<T1, T2, T3, T4> : IEcsFilter
+    where T1 : unmanaged, IComponent
+    where T2 : unmanaged, IComponent
+    where T3 : unmanaged, IComponent
+    where T4 : unmanaged, IComponent 
+{
+    public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2), typeof(T3), typeof(T4)};
+
+    public bool Filter(Archetype archetype) { 
+        if (archetype.ContainsComponent(typeof(T1))) return true;
+        if (archetype.ContainsComponent(typeof(T2))) return true;
+        if (archetype.ContainsComponent(typeof(T3))) return true;
+        if (archetype.ContainsComponent(typeof(T4))) return true;
+        return false;
+    }
+}
+
+public readonly struct Any<T1, T2, T3, T4, T5> : IEcsFilter
+    where T1 : unmanaged, IComponent
+    where T2 : unmanaged, IComponent
+    where T3 : unmanaged, IComponent
+    where T4 : unmanaged, IComponent
+    where T5 : unmanaged, IComponent 
+{
+    public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5)};
+
+    public bool Filter(Archetype archetype) { 
+        if (archetype.ContainsComponent(typeof(T1))) return true;
+        if (archetype.ContainsComponent(typeof(T2))) return true;
+        if (archetype.ContainsComponent(typeof(T3))) return true;
+        if (archetype.ContainsComponent(typeof(T4))) return true;
+        if (archetype.ContainsComponent(typeof(T5))) return true;
+        return false;
+    }
+}
+
+public readonly struct Any<T1, T2, T3, T4, T5, T6> : IEcsFilter
+    where T1 : unmanaged, IComponent
+    where T2 : unmanaged, IComponent
+    where T3 : unmanaged, IComponent
+    where T4 : unmanaged, IComponent
+    where T5 : unmanaged, IComponent
+    where T6 : unmanaged, IComponent 
+{
+    public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6)};
+
+    public bool Filter(Archetype archetype) { 
+        if (archetype.ContainsComponent(typeof(T1))) return true;
+        if (archetype.ContainsComponent(typeof(T2))) return true;
+        if (archetype.ContainsComponent(typeof(T3))) return true;
+        if (archetype.ContainsComponent(typeof(T4))) return true;
+        if (archetype.ContainsComponent(typeof(T5))) return true;
+        if (archetype.ContainsComponent(typeof(T6))) return true;
+        return false;
+    }
+}
+
+public readonly struct Any<T1, T2, T3, T4, T5, T6, T7> : IEcsFilter
+    where T1 : unmanaged, IComponent
+    where T2 : unmanaged, IComponent
+    where T3 : unmanaged, IComponent
+    where T4 : unmanaged, IComponent
+    where T5 : unmanaged, IComponent
+    where T6 : unmanaged, IComponent
+    where T7 : unmanaged, IComponent 
+{
+    public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7)};
+
+    public bool Filter(Archetype archetype) { 
+        if (archetype.ContainsComponent(typeof(T1))) return true;
+        if (archetype.ContainsComponent(typeof(T2))) return true;
+        if (archetype.ContainsComponent(typeof(T3))) return true;
+        if (archetype.ContainsComponent(typeof(T4))) return true;
+        if (archetype.ContainsComponent(typeof(T5))) return true;
+        if (archetype.ContainsComponent(typeof(T6))) return true;
+        if (archetype.ContainsComponent(typeof(T7))) return true;
+        return false;
+    }
+}
+
+public readonly struct Any<T1, T2, T3, T4, T5, T6, T7, T8> : IEcsFilter
+    where T1 : unmanaged, IComponent
+    where T2 : unmanaged, IComponent
+    where T3 : unmanaged, IComponent
+    where T4 : unmanaged, IComponent
+    where T5 : unmanaged, IComponent
+    where T6 : unmanaged, IComponent
+    where T7 : unmanaged, IComponent
+    where T8 : unmanaged, IComponent 
+{
+    public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7), typeof(T8)};
+
+    public bool Filter(Archetype archetype) { 
+        if (archetype.ContainsComponent(typeof(T1))) return true;
+        if (archetype.ContainsComponent(typeof(T2))) return true;
+        if (archetype.ContainsComponent(typeof(T3))) return true;
+        if (archetype.ContainsComponent(typeof(T4))) return true;
+        if (archetype.ContainsComponent(typeof(T5))) return true;
+        if (archetype.ContainsComponent(typeof(T6))) return true;
+        if (archetype.ContainsComponent(typeof(T7))) return true;
+        if (archetype.ContainsComponent(typeof(T8))) return true;
+        return false;
+    }
+}
+
+public readonly struct None<T1> : IEcsFilter
     where T1 : unmanaged, IComponent 
 {
     public Type[] GetTypeArray() => new[] {typeof(T1)};
@@ -167,7 +311,7 @@ public readonly struct Exclude<T1> : IEcsFilter
     }
 }
 
-public readonly struct Exclude<T1, T2> : IEcsFilter
+public readonly struct None<T1, T2> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent 
 {
@@ -181,7 +325,7 @@ public readonly struct Exclude<T1, T2> : IEcsFilter
     }
 }
 
-public readonly struct Exclude<T1, T2, T3> : IEcsFilter
+public readonly struct None<T1, T2, T3> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent
     where T3 : unmanaged, IComponent 
@@ -197,7 +341,7 @@ public readonly struct Exclude<T1, T2, T3> : IEcsFilter
     }
 }
 
-public readonly struct Exclude<T1, T2, T3, T4> : IEcsFilter
+public readonly struct None<T1, T2, T3, T4> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent
     where T3 : unmanaged, IComponent
@@ -215,7 +359,7 @@ public readonly struct Exclude<T1, T2, T3, T4> : IEcsFilter
     }
 }
 
-public readonly struct Exclude<T1, T2, T3, T4, T5> : IEcsFilter
+public readonly struct None<T1, T2, T3, T4, T5> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent
     where T3 : unmanaged, IComponent
@@ -235,7 +379,7 @@ public readonly struct Exclude<T1, T2, T3, T4, T5> : IEcsFilter
     }
 }
 
-public readonly struct Exclude<T1, T2, T3, T4, T5, T6> : IEcsFilter
+public readonly struct None<T1, T2, T3, T4, T5, T6> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent
     where T3 : unmanaged, IComponent
@@ -257,7 +401,7 @@ public readonly struct Exclude<T1, T2, T3, T4, T5, T6> : IEcsFilter
     }
 }
 
-public readonly struct Exclude<T1, T2, T3, T4, T5, T6, T7> : IEcsFilter
+public readonly struct None<T1, T2, T3, T4, T5, T6, T7> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent
     where T3 : unmanaged, IComponent
@@ -281,7 +425,7 @@ public readonly struct Exclude<T1, T2, T3, T4, T5, T6, T7> : IEcsFilter
     }
 }
 
-public readonly struct Exclude<T1, T2, T3, T4, T5, T6, T7, T8> : IEcsFilter
+public readonly struct None<T1, T2, T3, T4, T5, T6, T7, T8> : IEcsFilter
     where T1 : unmanaged, IComponent
     where T2 : unmanaged, IComponent
     where T3 : unmanaged, IComponent

@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using MathStuff;
 using Quartz.core;
 using Quartz.debug.log;
 using Quartz.other;
@@ -10,19 +13,36 @@ public static class MemoryAllocator {
 	public static ulong totalAllocated => QuartzNative.GetTotalAllocatedBytes();
 	public static ulong allocatedSinceLastCleanup => QuartzNative.GetAllocatedBytesSinceLastCleanup();
 	public static int allocatedPerRareUpdate;
-	
+
+	private static Dictionary<IntPtr, int> _sizes = new();
+
 	public static unsafe void* Allocate(int bytes) {
 		allocatedPerRareUpdate += bytes;
-		return QuartzNative.Allocate((uint) bytes);
+		//Log.Warning(Environment.StackTrace.Replace("[","[[").Replace("]","]]"));
+		void* ptr = QuartzNative.Allocate((uint) bytes);
+
+		_sizes.Add((IntPtr) ptr, bytes);
+		//Console.WriteLine($"alloc {(long) ptr} {((ulong)bytes).ToStringData()}");
+		return ptr;
 	}
-	
-	public static unsafe void Free(void* ptr) => QuartzNative.Free(ptr);
+
+	public static unsafe void Free(void* ptr) {
+		Console.WriteLine($"free {(long) ptr} {((ulong)_sizes[(IntPtr) ptr]).ToStringData()}");
+		_sizes.Remove((IntPtr)ptr);
+		QuartzNative.Free(ptr);
+	}
 
 	public static unsafe void* Resize(void* ptr, int newSizeBytes) {
 		if (ptr == null) return Allocate(newSizeBytes);
 		allocatedPerRareUpdate += newSizeBytes;
 
-		return QuartzNative.Resize(ptr, (uint)newSizeBytes);
+		//Log.Warning(Environment.StackTrace.Replace("[","[[").Replace("]","]]"));
+		void* ptrNew = QuartzNative.Resize(ptr, (uint)newSizeBytes);
+		
+		//Console.WriteLine($"realloc {(long) ptr} -> {(long) ptrNew} {((ulong)_sizes[(IntPtr) ptr]).ToStringData()} -> {((ulong) newSizeBytes).ToStringData()}");
+		_sizes.Remove((IntPtr)ptr);
+		_sizes.Add((IntPtr) ptrNew, newSizeBytes);
+		return ptrNew;
 	}
 
 	[CallRepeating(EventTypes.lowMemory)]

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Quartz.objects.ecs.systems;
 
 namespace Quartz.other.events;
 
@@ -11,9 +12,11 @@ public static partial class EventManager {
 		if (processedAssemblies.Contains(asm)) return;
 		processedAssemblies.Add(asm);
 
-		MethodInfo[] methods = asm.GetTypes().SelectMany(v => v.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)).ToArray();
+		Type[] types = asm.GetTypes();
+		MethodInfo[] methods = types.SelectMany(v => v.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)).ToArray();
 		ProcessCallAttributes(methods);
 		ProcessRepeatCallAttributes(methods);
+		ExecuteByEventPipelineAttribute.ProcessAttributes(types);
 	}
 
 	private static void ProcessCallAttributes(IEnumerable<MethodInfo> methods) {

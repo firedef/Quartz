@@ -1,0 +1,218 @@
+<#@ template language="C#v3.5" #>
+<#@ assembly name="System.Core"#>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+using Quartz.objects.ecs.archetypes;
+using Quartz.objects.ecs.components;
+using Quartz.objects.ecs.delegates;
+using Quartz.objects.ecs.entities;
+using Quartz.objects.ecs.filters;
+using Quartz.objects.ecs.components.attributes;
+
+namespace Quartz.objects.ecs.world; 
+
+public partial class World {
+<#
+    const int genericCountMax = 8;
+    for (int genericCount = 1; genericCount <= genericCountMax; genericCount++) {
+        int[] genericIndices = Enumerable.Range(1, genericCount).ToArray();
+        string genericsRaw = string.Join(", ", genericIndices.Select(v => $"T{v}"));
+        string generics = $"<{genericsRaw}>";
+        string genericsXml = $"{{{genericsRaw}}}";
+        string genericTypeArray = $"new[] {{{string.Join(", ", genericIndices.Select(v => $"typeof(T{v})"))}}}";
+        string[] typeOfs = genericIndices.Select(v => $"typeof(T{v})").ToArray();
+        string typeOfArgs = string.Join(", ", typeOfs);
+#>
+	/// <summary>
+	/// get or create new <see cref="Archetype"/> with exact match of components <br/><br/>
+	/// will also add required attributes (<see cref="RequireAttribute"/>)
+	/// </summary>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public Archetype GetArchetype<#=generics#>()
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
+        => GetArchetype(<#=typeOfArgs#>);
+
+	/// <summary>
+	/// create new <see cref="Entity"/> with exact match of components <br/><br/>
+	/// you can add/remove components later, but with small performance hit <br/><br/>
+	/// if you want to add multiple entities, use <see cref="CreateEntities<#=genericsXml#>"/> or <see cref="CreateEntity(Archetype)"/> with archetype from <see cref="GetArchetype<#=genericsXml#>"/>  <br/><br/>
+	/// will also add required attributes (<see cref="RequireAttribute"/>)
+	/// </summary>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public EntityId CreateEntity<#=generics#>()
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
+        => CreateEntity(GetArchetype<#=generics#>());
+
+	/// <summary>
+	/// create multiple <see cref="Entity"/>'ties with exact match of components <br/><br/>
+	/// if you want to initialize components, use overload with EcsDelegates.ComponentDelegate<#=genericsXml#>"/> <br/><br/>
+	/// will also add required attributes (<see cref="RequireAttribute"/>)
+	/// </summary>
+	/// <param name="count">count of entities to spawn</param>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public void CreateEntities<#=generics#>(int count)
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
+        => CreateEntities(count, GetArchetype<#=generics#>(), _=>{});
+
+	/// <summary>
+	/// create multiple <see cref="Entity"/>'ties with exact match of components <br/><br/>
+	/// if you want to initialize components, use overload with EcsDelegates.ComponentDelegate<#=genericsXml#>"/> <br/><br/>
+	/// will also add required attributes (<see cref="RequireAttribute"/>)
+	/// </summary>
+	/// <param name="count">count of entities to spawn</param>
+	/// <param name="onEntityCreation">delegate, called for every spawned entity</param>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public void CreateEntitiesForeach<#=generics#>(int count, Action<EntityId> onEntityCreation)
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
+        => CreateEntities(count, GetArchetype<#=generics#>(), onEntityCreation);
+
+	/// <summary>
+	/// create multiple <see cref="Entity"/>'ties with exact match of components, and initialize components <br/><br/>
+	/// will also add required attributes (<see cref="RequireAttribute"/>)
+	/// </summary>
+	/// <param name="count">count of entities to spawn</param>
+	/// <param name="onEntityCreation">delegate, called for every spawned entity, used for component initialization</param>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public unsafe void CreateEntitiesForeachComp<#=generics#>(int count, EcsDelegates.ComponentDelegate<#=generics#> onEntityCreation)
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#> {
+        Archetype archetype = GetArchetype<#=generics#>();
+        archetype.PreAllocate(count);
+       
+        <#= string.Join("\n" + Indent("", 2), genericIndices.Select(v => $"T{v}* c{v} = (T{v}*) archetype.GetComponent(archetype.IndexOfComponent(typeof(T{v}).ToEcsComponent()), 0);"))#>
+        entities.AddMultiple(count, i => {
+			EntityId ent = i;
+			archetypes.AddEntity(ent, archetype);
+			uint offset = archetype.GetComponentIdFromEntity(ent);
+			onEntityCreation(<#= string.Join(", ", genericIndices.Select(v => $"c{v} + offset"))#>);
+		});
+    }
+
+	/// <summary>
+	/// invoke delegate for every entity, which has all of the specified components, even if there are other components <br/><br/>
+	/// to iterate with exact match / excluded components, use overload with <see cref="IEcsFilter"/>
+	/// </summary>
+	/// <param name="a">delegate, called for every matched entity component</param>
+	/// <param name="useLock">lock used archetypes, to prevent race condition</param>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public void Foreach<#=generics#>(EcsDelegates.ComponentDelegate<#=generics#> a, bool useLock = false)
+		<#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
+		=> archetypes.Foreach<#=generics#>(a, useLock);
+
+	/// <summary>
+	/// invoke delegate for every entity, which has all of the specified components, even if there are other components <br/><br/>
+	/// to iterate with exact match / excluded components, use overload with <see cref="IEcsFilter"/>
+	/// </summary>
+	/// <param name="batched">delegate, called for every matched entity component batch</param>
+	/// <param name="basic">delegate, called for every matched entity, which is not included to batch</param>
+	/// <param name="batchSize">size of single batch</param>
+	/// <param name="useLock">lock used archetypes, to prevent race condition</param>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public void ForeachBatched<#=generics#>(EcsDelegates.ComponentDelegate<#=generics#> batched, EcsDelegates.ComponentDelegate<#=generics#> basic, int batchSize, bool useLock = false)
+		<#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
+		=> archetypes.ForeachBatched<#=generics#>(batched, basic, batchSize, useLock);
+
+	/// <summary>
+	/// invoke delegate for every entity, which has all of the specified components and matches filter <br/><br/>
+	/// filters, that can include components: <see cref="All{T1, T2}"/>, <see cref="Any{T1, T2}"/> or exclude <see cref="None{T1, T2}"/>  <br/>
+	/// filters, that can combine other filters: <see cref="And{TF1, TF2}"/>, <see cref="Or{TF1, TF2}"/>, <see cref="Not{TFilter}"/>  <br/>
+	/// you can create custom filters, see: <see cref="IEcsFilter"/>
+	/// </summary>
+	/// <param name="a">delegate, called for every matched entity component</param>
+	/// <param name="useLock">lock used archetypes, to prevent race condition</param>
+	/// <typeparam name="TFilter">filter</typeparam>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public void Foreach<TFilter, <#=genericsRaw#>>(EcsDelegates.ComponentDelegate<#=generics#> a, bool useLock = false)
+		where TFilter : IEcsFilter, new()
+		<#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
+		=> archetypes.Foreach<TFilter, <#=genericsRaw#>>(a, useLock);
+
+	/// <summary>
+	/// invoke delegate for every entity, which has all of the specified components and matches filter <br/><br/>
+	/// filters, that can include components: <see cref="All{T1, T2}"/>, <see cref="Any{T1, T2}"/> or exclude <see cref="None{T1, T2}"/>  <br/>
+	/// filters, that can combine other filters: <see cref="And{TF1, TF2}"/>, <see cref="Or{TF1, TF2}"/>, <see cref="Not{TFilter}"/>  <br/>
+	/// you can create custom filters, see: <see cref="IEcsFilter"/>
+	/// </summary>
+	/// <param name="batched">delegate, called for every matched entity component batch</param>
+	/// <param name="basic">delegate, called for every matched entity, which is not included to batch</param>
+	/// <param name="batchSize">size of single batch</param>
+	/// <param name="useLock">lock used archetypes, to prevent race condition</param>
+	/// <typeparam name="TFilter">filter</typeparam>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public void ForeachBatched<TFilter, <#=genericsRaw#>>(EcsDelegates.ComponentDelegate<#=generics#> batched, EcsDelegates.ComponentDelegate<#=generics#> basic, int batchSize, bool useLock = false)
+		where TFilter : IEcsFilter, new()
+		<#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
+		=> archetypes.ForeachBatched<TFilter, <#=genericsRaw#>>(batched, basic, batchSize, useLock);
+
+	/// <summary>
+	/// invoke delegate for every entity, which has all of the specified components, even if there are other components <br/><br/>
+	/// every used archetype will execute in different thread <br/>
+	/// archetype sizes can vary a lot, so it`s not good at load-balancing <br/><br/>
+	/// to iterate with exact match / excluded components, use overload with <see cref="IEcsFilter"/>
+	/// </summary>
+	/// <param name="a">delegate, called for every matched entity component</param>
+	/// <param name="useLock">lock used archetypes, to prevent race condition</param>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public Task ForeachAsync<#=generics#>(EcsDelegates.ComponentDelegate<#=generics#> a, bool useLock = false)
+		<#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
+		=> archetypes.ForeachAsync<#=generics#>(a, useLock);
+
+	/// <summary>
+	/// invoke delegate for every entity, which has all of the specified components, even if there are other components <br/><br/>
+	/// every used archetype will execute in different thread <br/>
+	/// archetype sizes can vary a lot, so it`s not good at load-balancing <br/><br/>
+	/// to iterate with exact match / excluded components, use overload with <see cref="IEcsFilter"/>
+	/// </summary>
+	/// <param name="batched">delegate, called for every matched entity component batch</param>
+	/// <param name="basic">delegate, called for every matched entity, which is not included to batch</param>
+	/// <param name="batchSize">size of single batch</param>
+	/// <param name="useLock">lock used archetypes, to prevent race condition</param>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public Task ForeachAsyncBatched<#=generics#>(EcsDelegates.ComponentDelegate<#=generics#> batched, EcsDelegates.ComponentDelegate<#=generics#> basic, int batchSize, bool useLock = false)
+		<#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
+		=> archetypes.ForeachAsyncBatched<#=generics#>(batched, basic, batchSize, useLock);
+
+	/// <summary>
+	/// invoke delegate for every entity, which has all of the specified components and matches filter <br/><br/>
+	/// every used archetype will execute in different thread <br/>
+	/// archetype sizes can vary a lot, so it`s not good at load-balancing <br/><br/>
+	/// filters, that can include components: <see cref="All{T1, T2}"/>, <see cref="Any{T1, T2}"/> or exclude <see cref="None{T1, T2}"/>  <br/>
+	/// filters, that can combine other filters: <see cref="And{TF1, TF2}"/>, <see cref="Or{TF1, TF2}"/>, <see cref="Not{TFilter}"/>  <br/>
+	/// you can create custom filters, see: <see cref="IEcsFilter"/>
+	/// </summary>
+	/// <param name="a">delegate, called for every matched entity component</param>
+	/// <param name="useLock">lock used archetypes, to prevent race condition</param>
+	/// <typeparam name="TFilter">filter</typeparam>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public Task ForeachAsync<TFilter, <#=genericsRaw#>>(EcsDelegates.ComponentDelegate<#=generics#> a, bool useLock = false)
+		where TFilter : IEcsFilter, new()
+		<#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
+		=> archetypes.ForeachAsync<TFilter, <#=genericsRaw#>>(a, useLock);
+
+	/// <summary>
+	/// invoke delegate for every entity, which has all of the specified components and matches filter <br/><br/>
+	/// every used archetype will execute in different thread <br/>
+	/// archetype sizes can vary a lot, so it`s not good at load-balancing <br/><br/>
+	/// filters, that can include components: <see cref="All{T1, T2}"/>, <see cref="Any{T1, T2}"/> or exclude <see cref="None{T1, T2}"/>  <br/>
+	/// filters, that can combine other filters: <see cref="And{TF1, TF2}"/>, <see cref="Or{TF1, TF2}"/>, <see cref="Not{TFilter}"/>  <br/>
+	/// you can create custom filters, see: <see cref="IEcsFilter"/>
+	/// </summary>
+	/// <param name="batched">delegate, called for every matched entity component batch</param>
+	/// <param name="basic">delegate, called for every matched entity, which is not included to batch</param>
+	/// <param name="batchSize">size of single batch</param>
+	/// <param name="useLock">lock used archetypes, to prevent race condition</param>
+	/// <typeparam name="TFilter">filter</typeparam>
+	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
+    public Task ForeachAsyncBatched<TFilter, <#=genericsRaw#>>(EcsDelegates.ComponentDelegate<#=generics#> batched, EcsDelegates.ComponentDelegate<#=generics#> basic, int batchSize, bool useLock = false)
+		where TFilter : IEcsFilter, new()
+		<#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
+		=> archetypes.ForeachAsyncBatched<TFilter, <#=genericsRaw#>>(batched, basic, batchSize, useLock);
+
+<#
+        string GetGenericConstrains(int indent, params string[] constr) => string.Join("\n" + Indent("", indent), genericIndices.Select(v => $"where T{v} : {string.Join(", ", constr)}"));
+        string NewLine(int l) => "\n" + new string(' ', l * 4);
+        string Indent(string s, int l) => new string(' ', l * 4) + s;
+    }
+#>
+}

@@ -10,8 +10,8 @@ using Quartz.objects.ecs.archetypes;
 namespace Quartz.objects.ecs.filters;
 <#
     const int genericCountMax = 8;
-    string[] types = {"Include", "Exclude", "And", "Or", "Not"};
-    (int min, int max)[] genericCountRanges = {(1,genericCountMax), (1,genericCountMax), (2,genericCountMax), (2,genericCountMax), (1,1)};
+    string[] types = {"All", "Any", "None", "And", "Or", "Not"};
+    (int min, int max)[] genericCountRanges = {(1,genericCountMax), (1,genericCountMax), (1,genericCountMax), (2,genericCountMax), (2,genericCountMax), (1,1)};
 
     for (int i = 0; i < types.Length; i++) {
         string filterName = types[i];
@@ -28,8 +28,9 @@ public readonly struct <#=typeName#> : IEcsFilter
     public Type[] GetTypeArray() => <#= genericTypeArray#>;
 
     public bool Filter(Archetype archetype) { <#= filterName switch {
-    "Include" => GenIncludeFilter(),
-    "Exclude" => GenExcludeFilter(),
+    "All" => GenAllFilter(),
+    "Any" => GenAnyFilter(),
+    "None" => GenNoneFilter(),
     "And" => GenAndFilter(),
     "Or" => GenOrFilter(),
     "Not" => GenNotFilter(),
@@ -42,8 +43,9 @@ public readonly struct <#=typeName#> : IEcsFilter
 
             string[] GetGenericConstrains() {
                 switch (filterName) {
-                    case "Include":
-                    case "Exclude": return new[] {"unmanaged", "IComponent"};
+                    case "All":
+                    case "Any":
+                    case "None": return new[] {"unmanaged", "IComponent"};
                     case "And":
                     case "Or":
                     case "Not": return new[] {"IEcsFilter", "new()"};
@@ -51,12 +53,16 @@ public readonly struct <#=typeName#> : IEcsFilter
                 }
             }
             
-            string GenIncludeFilter() => $@"
+            string GenAllFilter() => $@"
         if (archetype.componentTypes.Length < {genericCount}) return false;
         {string.Join("\n" + Indent("",2), genericIndices.Select(v => $"if (!archetype.ContainsComponent(typeof(T{v}))) return false;"))}
         return true;";
             
-            string GenExcludeFilter() => $@"
+            string GenAnyFilter() => $@"
+        {string.Join("\n" + Indent("",2), genericIndices.Select(v => $"if (archetype.ContainsComponent(typeof(T{v}))) return true;"))}
+        return false;";
+            
+            string GenNoneFilter() => $@"
         if (archetype.componentTypes.Length < {genericCount}) return true;
         {string.Join("\n" + Indent("",2), genericIndices.Select(v => $"if (archetype.ContainsComponent(typeof(T{v}))) return false;"))}
         return true;";

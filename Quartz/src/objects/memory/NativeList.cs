@@ -44,7 +44,7 @@ public class NativeList<T> : ICollection<T>, IDisposable where T : unmanaged {
 		capacity = newSize;
 	}
 
-	protected void Expand(int minSize) => Resize(capacity + math.max(minSize, defaultSize));
+	protected void Expand(int minSize) => Resize(capacity + math.max(minSize, capacity));
 	public void EnsureFreeSpace(int space) { if (freeSpace < space) Expand(space); }
 	public void EnsureCapacity(int c) { if (capacity < c) Expand(c - capacity); }
 	
@@ -169,9 +169,11 @@ public class NativeList<T> : ICollection<T>, IDisposable where T : unmanaged {
 
 	private unsafe void ReleaseUnmanagedResources() {
 		MemoryAllocator.Free(ptr);
+		ptr = null;
 		capacity = 0;
 	}
-	public void Dispose() {
+	public unsafe void Dispose() {
+		if (ptr == null) return;
 		ReleaseUnmanagedResources();
 		GC.SuppressFinalize(this);
 	}

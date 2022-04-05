@@ -10,5 +10,8 @@ public readonly struct EntityId {
 	public static implicit operator uint(EntityId v) => v.id;
 	public static implicit operator EntityId(uint v) => new(v);
 	
+	public static implicit operator int(EntityId v) => (int)v.id;
+	public static implicit operator EntityId(int v) => new((uint)v);
+	
 	public override string ToString() => id.ToString();
 }

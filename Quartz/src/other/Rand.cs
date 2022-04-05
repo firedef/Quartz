@@ -1,4 +1,5 @@
 using MathStuff;
+using MathStuff.vectors;
 
 namespace Quartz.other; 
 
@@ -13,6 +14,10 @@ public static class Rand {
 	}
 
 	public static float Range(float min, float max) => val * (max - min) + min;
+	public static int Int() => instance.Next();
+	public static int Int(int min, int max) => instance.Next(min, max);
+
+	public static float2 Float2(float2 min, float2 max) => new(Range(min.x, max.x), Range(min.y, max.y));
 
 	public static bool Bool(float chance) => val < chance;
 }

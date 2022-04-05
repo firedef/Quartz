@@ -41,6 +41,7 @@ public abstract class ParticleSystem {
 			return;
 		}
 		mesh.vertices.EnsureFreeSpace(1);
+		ptr = (ParticleData*)mesh.vertices.ptr;
 		ptr[mesh.vertices.count++] = data;
 	}
 

@@ -1,9 +1,13 @@
+using Quartz.objects.ecs.components;
+using Quartz.objects.ecs.entities;
+
 namespace Quartz.objects.ecs.archetypes; 
 
 public class Archetype {
 #region fields
 
-	public readonly Type[] componentTypes;
+	private readonly object _currentLock = new();
+	public readonly ComponentType[] componentTypes;
 	public readonly EcsChunk components;
 	public readonly ArchetypeRoot root;
 	public readonly uint id;
@@ -12,11 +16,11 @@ public class Archetype {
 
 #region init
 
-	public Archetype(Type[] componentTypes, ArchetypeRoot root, uint id) {
+	public Archetype(ComponentType[] componentTypes, ArchetypeRoot root, uint id) {
 		this.componentTypes = componentTypes;
 		EcsList[] c = new EcsList[componentTypes.Length];
 		for (int i = 0; i < componentTypes.Length; i++)
-			c[i] = EcsListTypes.CreateList(componentTypes[i]);
+			c[i] = EcsListTypes.CreateList(componentTypes[i].type);
 
 		components = new(c);
 		this.root = root;
@@ -27,17 +31,24 @@ public class Archetype {
 
 #region components
 
-	public bool ContainsComponent(Type t) => IndexOfComponent(t) != -1;
+	public void PreAllocate(int count) {
+		int componentCount = componentTypes.Length;
+		for (int i = 0; i < componentCount; i++)
+			components.components[i].PreAllocate(count);
+	}
 
-	public int IndexOfComponent(Type t) {
+	public bool ContainsComponent(ComponentType t) => IndexOfComponent(t) != -1;
+	public bool ContainsComponent(Type t) => IndexOfComponent(t.ToEcsComponent()) != -1;
+
+	public int IndexOfComponent(ComponentType t) {
 		int c = componentTypes.Length;
 		for (int i = 0; i < c; i++)
-			if (componentTypes[i] == t)
+			if (componentTypes[i].id == t.id)
 				return i;
 		return -1;
 	}
 	
-	public bool ContainsArchetype(Type[] types) {
+	public bool ContainsArchetype(ComponentType[] types) {
 		int currentTypeCount = componentTypes.Length;
 		int otherTypeCount = types.Length;
 
@@ -53,12 +64,27 @@ public class Archetype {
 		return true;
 	}
 
-	public unsafe void* GetComponent(Type t, uint component) {
+	public unsafe void* GetComponent(ComponentType t, uint component) {
 		int compIndex = IndexOfComponent(t);
 		if (compIndex == -1) return null;
 		long offset = component * components.components[compIndex].elementSize;
 		return (byte*) components.components[compIndex].rawData + offset;
-	} 
+	}
+	
+	public uint GetComponentIdFromEntity(EntityId entity) => components.entityComponentMap[entity.id];
+
+	public unsafe void* GetComponent(int componentIndex, uint component) {
+		long offset = component * components.components[componentIndex].elementSize;
+		return (byte*) components.components[componentIndex].rawData + offset;
+	}
 	
 #endregion components
+	
+#region other
+
+	public void Lock() => Monitor.Enter(_currentLock);
+	public bool TryLock() => Monitor.TryEnter(_currentLock);
+	public void Unlock() => Monitor.Exit(_currentLock);
+
+#endregion other
 }

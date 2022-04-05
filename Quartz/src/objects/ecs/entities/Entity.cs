@@ -1,7 +1,9 @@
+using System.Runtime.InteropServices;
 using Quartz.objects.ecs.world;
 
 namespace Quartz.objects.ecs.entities; 
 
+[StructLayout(LayoutKind.Sequential, Pack = 2)]
 public struct Entity {
 	public EntityId id;
 	public WorldId world;

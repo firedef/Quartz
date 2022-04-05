@@ -3,9 +3,9 @@ using Quartz.other.events;
 namespace Quartz.objects.ecs.systems; 
 
 public interface IAutoEntitySystem {
-	public EventTypes types { get; }
+	public EventTypes eventTypes { get; }
 	public bool repeating { get; }
-	public bool continueInvoke { get; }
-	public float lifetime { get; }
-	public bool invokeWhileInactive { get; }
+	public virtual bool continueInvoke => true;
+	public virtual float lifetime => float.MaxValue;
+	public virtual bool invokeWhileInactive => false;
 }

@@ -19,22 +19,28 @@ public static class EntitySystemExtensions {
 
 		if (auto.repeating) {
 			Dispatcher.global.PushRepeating(() => {
-				if (world.isAlive && (world.isActive || auto.invokeWhileInactive)) sys.Run(world);
-			}, () => world.isAlive && auto.continueInvoke, auto.types, auto.lifetime);
+				if (world.isAlive && (world.isActive || auto.invokeWhileInactive)) sys.Execute(world);
+			}, () => world.isAlive && auto.continueInvoke, auto.eventTypes, auto.lifetime);
 			return;
 		}
 
 		Dispatcher.global.PushMultiple(() => {
-			if (world.isAlive) sys.Run(world);
-		}, auto.types, auto.lifetime);
+			if (world.isAlive) sys.Execute(world);
+		}, auto.eventTypes, auto.lifetime);
 	}
 	
 	public static void Register<T>(this T sys, World world) where T : EntitySystem, IAutoEntitySystem {
 		if (sys.repeating) {
-			Dispatcher.global.PushRepeating(() => sys.Run(world), () => sys.continueInvoke, sys.types, sys.lifetime);
+			Dispatcher.global.PushRepeating(() => sys.Execute(world, false), () => sys.continueInvoke, sys.eventTypes, sys.lifetime);
 			return;
 		}
 
-		Dispatcher.global.PushMultiple(() => sys.Run(world), sys.types, sys.lifetime);
+		Dispatcher.global.PushMultiple(() => sys.Execute(world), sys.eventTypes, sys.lifetime);
 	}
+
+	public static void ExecuteForEveryWorld(this EntitySystem sys) {
+		World.ForeachWorld(w => sys.Execute(w));
+	}
+
+	public static void ExecuteByDispatcher(this EntitySystem sys, World world, EventTypes type) => Dispatcher.global.Push(() => sys.Execute(world), type);
 }

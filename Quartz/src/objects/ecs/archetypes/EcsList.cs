@@ -24,6 +24,7 @@ public abstract class EcsList {
 	public abstract unsafe void AddFrom(void* src);
 	public abstract void ReplaceByLast(int index);
 	public abstract int elementSize { get; }
+	public abstract void PreAllocate(int elementCount);
 }
 
 public unsafe class EcsList<T> : EcsList where T : unmanaged {
@@ -50,4 +51,6 @@ public unsafe class EcsList<T> : EcsList where T : unmanaged {
 		if (index != collection.count)
 			collection.ptr[index] = collection.ptr[collection.count];
 	}
+
+	public override void PreAllocate(int elementCount) => collection.EnsureFreeSpace(elementCount);
 }

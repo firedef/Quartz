@@ -5,6 +5,7 @@ namespace Quartz.objects.ecs.managed;
 public class ManagedListPool<T> {
 	public List<T> storage = new();
 	public SortedIntList emptyIndices = new();
+	public int elementCount => storage.Count - emptyIndices.count;
 
 	private int _Add(T v) {
 		storage.Add(v);

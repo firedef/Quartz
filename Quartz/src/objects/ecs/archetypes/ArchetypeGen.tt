@@ -1,0 +1,209 @@
+<#@ template language="C#v3.5" #>
+<#@ assembly name="System.Core"#>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+using Quartz.core.collections;
+using Quartz.objects.ecs.components;
+using Quartz.objects.ecs.delegates;
+using Quartz.objects.ecs.entities;
+using Quartz.objects.ecs.filters;
+
+namespace Quartz.objects.ecs.archetypes; 
+
+public partial class ArchetypeRoot {
+<#
+    const int genericCountMax = 8;
+    for (int genericCount = 1; genericCount <= genericCountMax; genericCount++) {
+        int[] genericIndices = Enumerable.Range(1, genericCount).ToArray();
+        string genericsRaw = string.Join(", ", genericIndices.Select(v => $"T{v}"));
+        string generics = $"<{genericsRaw}>";
+        string genericsXml = $"{{{genericsRaw}}}";
+        string genericTypeArray = $"new[] {{{string.Join(", ", genericIndices.Select(v => $"typeof(T{v})"))}}}";
+        string[] typeOfs = genericIndices.Select(v => $"typeof(T{v})").ToArray();
+        string typeOfArgs = string.Join(", ", typeOfs);
+#>
+#region normal
+
+    public void Foreach<#=generics#>(EcsDelegates.ComponentDelegate<#=generics#> a, bool useLock = false)
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#> {
+        <#= string.Join("\n" + Indent("", 2), genericIndices.Select(v => $"ComponentType t{v} = typeof(T{v}).ToEcsComponent();"))#>
+
+        int archCount = _archetypes.Count;
+        for (int i = 0; i < archCount; i++) {
+            Archetype arch = _archetypes[i];
+
+            <#= string.Join("\n" + Indent("", 3), genericIndices.Select(v => $"int i{v} = arch.IndexOfComponent(t{v});\n{Indent("", 3)}if (i{v} == -1) continue;"))#>
+
+            if (useLock) arch.Lock();
+            arch.components.Foreach(a, <#= string.Join(", ", genericIndices.Select(v => $"i{v}"))#>);
+            if (useLock) arch.Unlock();
+        }
+    }
+
+    public void Foreach<TFilter, <#=genericsRaw#>>(EcsDelegates.ComponentDelegate<#=generics#> a, bool useLock = false)
+        where TFilter : IEcsFilter, new()
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#> {
+        <#= string.Join("\n" + Indent("", 2), genericIndices.Select(v => $"ComponentType t{v} = typeof(T{v}).ToEcsComponent();"))#>
+
+        TFilter filter = new();
+
+        int archCount = _archetypes.Count;
+        for (int i = 0; i < archCount; i++) {
+            Archetype arch = _archetypes[i];
+
+            <#= string.Join("\n" + Indent("", 3), genericIndices.Select(v => $"int i{v} = arch.IndexOfComponent(t{v});\n{Indent("", 3)}if (i{v} == -1) continue;"))#>
+
+            if (!filter.Filter(arch)) continue;
+
+            if (useLock) arch.Lock();
+            arch.components.Foreach(a, <#= string.Join(", ", genericIndices.Select(v => $"i{v}"))#>);
+            if (useLock) arch.Unlock();
+        }
+    }
+
+    public Task ForeachAsync<#=generics#>(EcsDelegates.ComponentDelegate<#=generics#> a, bool useLock = false)
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#> {
+        <#= string.Join("\n" + Indent("", 2), genericIndices.Select(v => $"ComponentType t{v} = typeof(T{v}).ToEcsComponent();"))#>
+
+        int archCount = _archetypes.Count;
+        List<Task> tasks = new(archCount);
+        for (int i = 0; i < archCount; i++) {
+            Archetype arch = _archetypes[i];
+
+            <#= string.Join("\n" + Indent("", 3), genericIndices.Select(v => $"int i{v} = arch.IndexOfComponent(t{v});\n{Indent("", 3)}if (i{v} == -1) continue;"))#>
+
+            tasks.Add(Task.Run(() => {
+                if (useLock) arch.Lock();
+                arch.components.Foreach(a, <#= string.Join(", ", genericIndices.Select(v => $"i{v}"))#>);
+                if (useLock) arch.Unlock();
+            }));
+        }
+
+        return Task.WhenAll(tasks.ToArray());
+    }
+
+    public Task ForeachAsync<TFilter, <#=genericsRaw#>>(EcsDelegates.ComponentDelegate<#=generics#> a, bool useLock = false)
+        where TFilter : IEcsFilter, new()
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#> {
+        <#= string.Join("\n" + Indent("", 2), genericIndices.Select(v => $"ComponentType t{v} = typeof(T{v}).ToEcsComponent();"))#>
+
+        TFilter filter = new();
+
+        int archCount = _archetypes.Count;
+        List<Task> tasks = new(archCount);
+        for (int i = 0; i < archCount; i++) {
+            Archetype arch = _archetypes[i];
+
+            <#= string.Join("\n" + Indent("", 3), genericIndices.Select(v => $"int i{v} = arch.IndexOfComponent(t{v});\n{Indent("", 3)}if (i{v} == -1) continue;"))#>
+
+            if (!filter.Filter(arch)) continue;
+
+            tasks.Add(Task.Run(() => {
+                if (useLock) arch.Lock();
+                arch.components.Foreach(a, <#= string.Join(", ", genericIndices.Select(v => $"i{v}"))#>);
+                if (useLock) arch.Unlock();
+            }));
+        }
+
+        return Task.WhenAll(tasks.ToArray());
+    }
+
+#endregion normal
+
+#region batched
+
+    public void ForeachBatched<#=generics#>(EcsDelegates.ComponentDelegate<#=generics#> batched, EcsDelegates.ComponentDelegate<#=generics#> basic, int batchSize, bool useLock = false)
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#> {
+        <#= string.Join("\n" + Indent("", 2), genericIndices.Select(v => $"ComponentType t{v} = typeof(T{v}).ToEcsComponent();"))#>
+
+        int archCount = _archetypes.Count;
+        for (int i = 0; i < archCount; i++) {
+            Archetype arch = _archetypes[i];
+
+            <#= string.Join("\n" + Indent("", 3), genericIndices.Select(v => $"int i{v} = arch.IndexOfComponent(t{v});\n{Indent("", 3)}if (i{v} == -1) continue;"))#>
+
+            if (useLock) arch.Lock();
+            arch.components.ForeachBatched(batched, basic, batchSize, <#= string.Join(", ", genericIndices.Select(v => $"i{v}"))#>);
+            if (useLock) arch.Unlock();
+        }
+    }
+
+    public void ForeachBatched<TFilter, <#=genericsRaw#>>(EcsDelegates.ComponentDelegate<#=generics#> batched, EcsDelegates.ComponentDelegate<#=generics#> basic, int batchSize, bool useLock = false)
+        where TFilter : IEcsFilter, new()
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#> {
+        <#= string.Join("\n" + Indent("", 2), genericIndices.Select(v => $"ComponentType t{v} = typeof(T{v}).ToEcsComponent();"))#>
+
+        TFilter filter = new();
+
+        int archCount = _archetypes.Count;
+        for (int i = 0; i < archCount; i++) {
+            Archetype arch = _archetypes[i];
+
+            <#= string.Join("\n" + Indent("", 3), genericIndices.Select(v => $"int i{v} = arch.IndexOfComponent(t{v});\n{Indent("", 3)}if (i{v} == -1) continue;"))#>
+
+            if (!filter.Filter(arch)) continue;
+
+            if (useLock) arch.Lock();
+            arch.components.ForeachBatched(batched, basic, batchSize, <#= string.Join(", ", genericIndices.Select(v => $"i{v}"))#>);
+            if (useLock) arch.Unlock();
+        }
+    }
+
+    public Task ForeachAsyncBatched<#=generics#>(EcsDelegates.ComponentDelegate<#=generics#> batched, EcsDelegates.ComponentDelegate<#=generics#> basic, int batchSize, bool useLock = false)
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#> {
+        <#= string.Join("\n" + Indent("", 2), genericIndices.Select(v => $"ComponentType t{v} = typeof(T{v}).ToEcsComponent();"))#>
+
+        int archCount = _archetypes.Count;
+        List<Task> tasks = new(archCount);
+        for (int i = 0; i < archCount; i++) {
+            Archetype arch = _archetypes[i];
+
+            <#= string.Join("\n" + Indent("", 3), genericIndices.Select(v => $"int i{v} = arch.IndexOfComponent(t{v});\n{Indent("", 3)}if (i{v} == -1) continue;"))#>
+
+            tasks.Add(Task.Run(() => {
+                if (useLock) arch.Lock();
+                arch.components.ForeachBatched(batched, basic, batchSize, <#= string.Join(", ", genericIndices.Select(v => $"i{v}"))#>);
+                if (useLock) arch.Unlock();
+            }));
+        }
+
+        return Task.WhenAll(tasks.ToArray());
+    }
+
+    public Task ForeachAsyncBatched<TFilter, <#=genericsRaw#>>(EcsDelegates.ComponentDelegate<#=generics#> batched, EcsDelegates.ComponentDelegate<#=generics#> basic, int batchSize, bool useLock = false)
+        where TFilter : IEcsFilter, new()
+        <#= GetGenericConstrains(2, "unmanaged", "IComponent")#> {
+        <#= string.Join("\n" + Indent("", 2), genericIndices.Select(v => $"ComponentType t{v} = typeof(T{v}).ToEcsComponent();"))#>
+
+        TFilter filter = new();
+
+        int archCount = _archetypes.Count;
+        List<Task> tasks = new(archCount);
+        for (int i = 0; i < archCount; i++) {
+            Archetype arch = _archetypes[i];
+
+            <#= string.Join("\n" + Indent("", 3), genericIndices.Select(v => $"int i{v} = arch.IndexOfComponent(t{v});\n{Indent("", 3)}if (i{v} == -1) continue;"))#>
+
+            if (!filter.Filter(arch)) continue;
+
+            tasks.Add(Task.Run(() => {
+                if (useLock) arch.Lock();
+                arch.components.ForeachBatched(batched, basic, batchSize, <#= string.Join(", ", genericIndices.Select(v => $"i{v}"))#>);
+                if (useLock) arch.Unlock();
+            }));
+        }
+
+        return Task.WhenAll(tasks.ToArray());
+    }
+
+#endregion batched
+
+<#
+        string GetGenericConstrains(int indent, params string[] constr) => string.Join("\n" + Indent("", indent), genericIndices.Select(v => $"where T{v} : {string.Join(", ", constr)}"));
+        string NewLine(int l) => "\n" + new string(' ', l * 4);
+        string Indent(string s, int l) => new string(' ', l * 4) + s;
+    }
+#>
+}
