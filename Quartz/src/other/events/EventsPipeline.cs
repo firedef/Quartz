@@ -4,11 +4,12 @@ using Quartz.debug.log;
 namespace Quartz.other.events; 
 
 public static class EventsPipeline {
-	public const int threadCount = 8;
+	public const int threadCount = 4;
 
 	private static Thread[] _threads = new Thread[threadCount];
 	private static readonly ConcurrentQueue<Event> _pendingEvents = new();
 	private static bool _isClosing;
+	private static bool _paused = true;
 
 	static EventsPipeline() {
 		for (int i = 0; i < threadCount; i++) {
@@ -23,7 +24,7 @@ public static class EventsPipeline {
 		Log.Message($"thread #{threadId} is started");
 		
 		while (!_isClosing) {
-			if (_pendingEvents.IsEmpty) {
+			if (_paused || _pendingEvents.IsEmpty) {
 				Thread.Sleep(10);
 				continue;
 			}
@@ -45,6 +46,9 @@ public static class EventsPipeline {
 	private static void CloseThreads() {
 		_isClosing = true;
 	}
+
+	public static void Pause() => _paused = true;
+	public static void Resume() => _paused = false;
 	
 	private static void Execute(Event action) => _pendingEvents.Enqueue(action);
 	private static void Execute(Event action, int delay) => Task.Run(async () => { await Task.Delay(delay); Execute(action); });

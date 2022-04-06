@@ -32,50 +32,60 @@ public class Archetype {
 #region components
 
 	public void PreAllocate(int count) {
-		int componentCount = componentTypes.Length;
-		for (int i = 0; i < componentCount; i++)
-			components.components[i].PreAllocate(count);
+		lock (_currentLock) {
+			int componentCount = componentTypes.Length;
+			for (int i = 0; i < componentCount; i++)
+				components.components[i].PreAllocate(count);
+		}
 	}
 
 	public bool ContainsComponent(ComponentType t) => IndexOfComponent(t) != -1;
 	public bool ContainsComponent(Type t) => IndexOfComponent(t.ToEcsComponent()) != -1;
 
 	public int IndexOfComponent(ComponentType t) {
-		int c = componentTypes.Length;
-		for (int i = 0; i < c; i++)
-			if (componentTypes[i].id == t.id)
-				return i;
-		return -1;
+		lock (_currentLock) {
+			int c = componentTypes.Length;
+			for (int i = 0; i < c; i++)
+				if (componentTypes[i].id == t.id)
+					return i;
+			return -1;
+		}
 	}
 	
 	public bool ContainsArchetype(ComponentType[] types) {
-		int currentTypeCount = componentTypes.Length;
-		int otherTypeCount = types.Length;
+		lock (_currentLock) {
+			int currentTypeCount = componentTypes.Length;
+			int otherTypeCount = types.Length;
 
-		if (currentTypeCount < otherTypeCount) return false;
+			if (currentTypeCount < otherTypeCount) return false;
 
-		for (int other = 0; other < otherTypeCount; other++) {
-			for (int cur = 0; cur < currentTypeCount; cur++)
-				if (componentTypes[cur] == types[other]) goto FOUND;
-			return false;
-		FOUND: ;
-		}
+			for (int other = 0; other < otherTypeCount; other++) {
+				for (int cur = 0; cur < currentTypeCount; cur++)
+					if (componentTypes[cur] == types[other]) goto FOUND;
+				return false;
+			FOUND: ;
+			}
 		
-		return true;
+			return true;
+		}
 	}
 
 	public unsafe void* GetComponent(ComponentType t, uint component) {
-		int compIndex = IndexOfComponent(t);
-		if (compIndex == -1) return null;
-		long offset = component * components.components[compIndex].elementSize;
-		return (byte*) components.components[compIndex].rawData + offset;
+		lock (_currentLock) {
+			int compIndex = IndexOfComponent(t);
+			if (compIndex == -1) return null;
+			long offset = component * components.components[compIndex].elementSize;
+			return (byte*) components.components[compIndex].rawData + offset;
+		}
 	}
 	
 	public uint GetComponentIdFromEntity(EntityId entity) => components.entityComponentMap[entity.id];
 
 	public unsafe void* GetComponent(int componentIndex, uint component) {
-		long offset = component * components.components[componentIndex].elementSize;
-		return (byte*) components.components[componentIndex].rawData + offset;
+		lock (_currentLock) {
+			long offset = component * components.components[componentIndex].elementSize;
+			return (byte*) components.components[componentIndex].rawData + offset;
+		}
 	}
 	
 #endregion components

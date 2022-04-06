@@ -1,3 +1,4 @@
+using MathStuff;
 using MathStuff.vectors;
 using OpenTK.Mathematics;
 using Quartz.graphics.render;
@@ -12,6 +13,8 @@ public class Camera {
 	public float3 rotation;
 	public float2 scale = float2.one;
 	public float orthographicSize = .01f;
+
+	public rect worldBounds;
 
 	public float2 targetSize;
 	
@@ -33,5 +36,7 @@ public class Camera {
 		Matrix4 proj = Matrix4.CreateOrthographic(20f / aspectRatio, -20f, .001f, 1000f);
 		Matrix4 view = Matrix4.LookAt(new(position.x, position.y, -10), new(position.x, position.y, 0), new(0, -1, 0));
 		viewProjection = view * proj;
+
+		worldBounds = new(-5, -5, 10, 10);
 	}
 }
