@@ -63,7 +63,8 @@ public static partial class EventManager {
 		Dispatcher.global.Call(EventTypes.frameUpdate);
 	}
 	
-	private static void OnFixedUpdate(float deltatime) {
+	public static void OnFixedUpdate(float deltatime) {
+		FixedUpdatePipeline.OnFixedUpdate();
 		Time.OnFixedUpdate(deltatime);
 		onFixedUpdate(deltatime);
 		Dispatcher.global.Call(EventTypes.fixedUpdate);

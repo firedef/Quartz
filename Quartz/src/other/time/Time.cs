@@ -7,6 +7,8 @@ public static class Time {
 	public static double elapsedSecondsGame;
 	public static double secondsRealTime => DateTime.Now.TimeOfDay.TotalSeconds;
 
+	public static int currentTick;
+
 	public static float frameDeltaTime;
 	public static float fixedDeltaTime;
 	
@@ -20,5 +22,6 @@ public static class Time {
 	
 	public static void OnFixedUpdate(float dt) {
 		fixedDeltaTime = dt;
+		currentTick++;
 	}
 }

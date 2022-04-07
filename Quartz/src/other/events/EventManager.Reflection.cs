@@ -5,8 +5,11 @@ namespace Quartz.other.events;
 
 public static partial class EventManager {
 	private static HashSet<Assembly> processedAssemblies = new();
-	
-	public static void ProcessCurrentAssembly() => ProcessAssembly(Assembly.GetCallingAssembly());
+
+	public static void ProcessCurrentAssembly() {
+		ProcessAssembly(Assembly.GetExecutingAssembly());
+		ProcessAssembly(Assembly.GetCallingAssembly());
+	}
 
 	public static void ProcessAssembly(Assembly asm) {
 		if (processedAssemblies.Contains(asm)) return;
@@ -16,7 +19,7 @@ public static partial class EventManager {
 		MethodInfo[] methods = types.SelectMany(v => v.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)).ToArray();
 		ProcessCallAttributes(methods);
 		ProcessRepeatCallAttributes(methods);
-		ExecuteByEventPipelineAttribute.ProcessAttributes(types);
+		ExecuteOnceAttribute.ProcessAttributes(methods);
 	}
 
 	private static void ProcessCallAttributes(IEnumerable<MethodInfo> methods) {
