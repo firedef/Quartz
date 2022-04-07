@@ -4,8 +4,8 @@ using Quartz.core.collections;
 namespace Quartz.collections; 
 
 public class DualIntMap {
-	protected IntMap kv = new();
-	protected IntMap vk = new();
+	protected readonly IntMap kv = new();
+	protected readonly IntMap vk = new();
 
 	public int count => kv.count;
 

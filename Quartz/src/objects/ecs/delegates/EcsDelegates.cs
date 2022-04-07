@@ -1,4 +1,5 @@
 using Quartz.objects.ecs.components;
+using Quartz.objects.ecs.entities;
 
 namespace Quartz.objects.ecs.delegates; 
 
@@ -53,4 +54,6 @@ public static class EcsDelegates {
 		where T5 : unmanaged, IComponent
 		where T6 : unmanaged, IComponent
 		where T7 : unmanaged, IComponent;
+	
+	public unsafe delegate void ComponentEntityDelegate<T0>(T0* c0, EntityId entity) where T0 : unmanaged, IComponent;
 }

@@ -2,32 +2,24 @@
 
 int SortedIntIntList::binarySearch(const uint32_t key) const {
     int size = (int) elements.size();
-    [[unlikely]]
-    if (size == 0) return -1;
+    [[unlikely]] if (size == 0) return -1;
     
-    int low = 0, mid;
+    int low = 0;
     int high = size - 1;
-
     while (low <= high) {
-        mid = low + ((high - low) >> 1);
+        int mid = (high + low) >> 1;
 
-        [[unlikely]]
+        [[unlikely]] 
         if (elements[mid].key == key) return mid;
-        if (elements[mid].key < key) {
-            low = mid + 1;
-            continue;
-        } 
-        high = mid - 1;
+        if (elements[mid].key < key) low = mid + 1;
+        else high = mid - 1;
     }
-
-    if (low < 0 || low >= elements.size()) return -1;
-    
     return low;
 }
 
 int SortedIntIntList::binarySearchExact(const uint32_t key) const {
     int index = binarySearch(key);
-    if (index != -1 && elements[index].key == key) return index;
+    if (index > -1 && elements[index].key == key) return index;
     return -1;
 }
 
@@ -41,19 +33,16 @@ void SortedIntIntList::remove(uint32_t key) {
 }
 
 void SortedIntIntList::set(IntInt element) {
-    int index = binarySearch(element.key);
-    
-    [[unlikely]]
-    if (index == -1) {
+    size_t size = elements.size();
+    if (size == 0 || elements[size - 1].key <= element.key) {
         elements.push_back(element);
         return;
     }
-
-    if (elements[index].key == element.key) {
-        elements[index].val = element.val;
+    if (elements[0].key >= element.key) {
+        insert(0, element);
         return;
-    } 
-
+    }
+    int index = binarySearch(element.key);
     insert(index, element);
 }
 

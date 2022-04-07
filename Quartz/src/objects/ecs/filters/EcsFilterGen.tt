@@ -63,7 +63,6 @@ public readonly struct <#=typeName#> : IEcsFilter
         return false;";
             
             string GenNoneFilter() => $@"
-        if (archetype.componentTypes.Length < {genericCount}) return true;
         {string.Join("\n" + Indent("",2), genericIndices.Select(v => $"if (archetype.ContainsComponent(typeof(T{v}))) return false;"))}
         return true;";
             

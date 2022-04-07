@@ -10,6 +10,7 @@ using Quartz.objects.ecs.delegates;
 using Quartz.objects.ecs.entities;
 using Quartz.objects.ecs.filters;
 using Quartz.objects.ecs.components.attributes;
+using Quartz.objects.memory;
 
 namespace Quartz.objects.ecs.world; 
 
@@ -32,18 +33,19 @@ public partial class World {
 	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
     public Archetype GetArchetype<#=generics#>()
         <#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
-        => GetArchetype(<#=typeOfArgs#>);
+        => GetArchetype(<#=typeOfArgs#>)!;
 
 	/// <summary>
 	/// create new <see cref="Entity"/> with exact match of components <br/><br/>
 	/// you can add/remove components later, but with small performance hit <br/><br/>
-	/// if you want to add multiple entities, use <see cref="CreateEntities<#=genericsXml#>"/> or <see cref="CreateEntity(Archetype)"/> with archetype from <see cref="GetArchetype<#=genericsXml#>"/>  <br/><br/>
+	/// if you want to add multiple entities, use <see cref="CreateEntities<#=genericsXml#>"/> or <see cref="CreateEntity(Archetype, InitMode)"/> with archetype from <see cref="GetArchetype<#=genericsXml#>"/>  <br/><br/>
 	/// will also add required attributes (<see cref="RequireAttribute"/>)
 	/// </summary>
+	/// <param name="initMode">initialization mode of each object</param>
 	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
-    public EntityId CreateEntity<#=generics#>()
+    public EntityId CreateEntity<#=generics#>(InitMode initMode = InitMode.ctor)
         <#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
-        => CreateEntity(GetArchetype<#=generics#>());
+        => CreateEntity(GetArchetype<#=generics#>(), initMode);
 
 	/// <summary>
 	/// create multiple <see cref="Entity"/>'ties with exact match of components <br/><br/>
@@ -51,10 +53,11 @@ public partial class World {
 	/// will also add required attributes (<see cref="RequireAttribute"/>)
 	/// </summary>
 	/// <param name="count">count of entities to spawn</param>
+	/// <param name="initMode">initialization mode of each object</param>
 	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
-    public void CreateEntities<#=generics#>(int count)
+    public void CreateEntities<#=generics#>(int count, InitMode initMode = InitMode.ctor)
         <#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
-        => CreateEntities(count, GetArchetype<#=generics#>(), _=>{});
+        => CreateEntities(count, GetArchetype<#=generics#>(), _=>{}, initMode);
 
 	/// <summary>
 	/// create multiple <see cref="Entity"/>'ties with exact match of components <br/><br/>
@@ -63,10 +66,11 @@ public partial class World {
 	/// </summary>
 	/// <param name="count">count of entities to spawn</param>
 	/// <param name="onEntityCreation">delegate, called for every spawned entity</param>
+	/// <param name="initMode">initialization mode of each object</param>
 	<#= string.Join(NewLine(1), genericIndices.Select(v => $"/// <typeparam name=\"T{v}\">component #{v}</typeparam>"))#>
-    public void CreateEntitiesForeach<#=generics#>(int count, Action<EntityId> onEntityCreation)
+    public void CreateEntitiesForeach<#=generics#>(int count, Action<EntityId> onEntityCreation, InitMode initMode = InitMode.ctor)
         <#= GetGenericConstrains(2, "unmanaged", "IComponent")#>
-        => CreateEntities(count, GetArchetype<#=generics#>(), onEntityCreation);
+        => CreateEntities(count, GetArchetype<#=generics#>(), onEntityCreation, initMode);
 
 	/// <summary>
 	/// create multiple <see cref="Entity"/>'ties with exact match of components, and initialize components <br/><br/>

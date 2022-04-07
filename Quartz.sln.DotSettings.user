@@ -1,0 +1,11 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/Environment/Highlighting/HighlightingSourceSnapshotLocation/@EntryValue">/home/firedef/.cache/JetBrains/Rider2021.3/resharper-host/temp/Rider/vAny/CoverageData/_Quartz.1957964662/Snapshot/snapshot.utdcvr</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=b0465a5c_002Dcaea_002D42df_002D99b5_002Daaae88fde937/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="CreateAndDisposeTest" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;NUnit3x::32603830-0881-4326-9E7A-B4F8D028810D::net6.0::Quartz.Tests.tests.collections.IntMapTests&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::32603830-0881-4326-9E7A-B4F8D028810D::net6.0::Quartz.Tests.tests.ecs.EcsTests.TestWorldCreateAndDestroy&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::32603830-0881-4326-9E7A-B4F8D028810D::net6.0::Quartz.Tests.tests.ecs.EcsTests.TestEntityCreateAndDestroy&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::32603830-0881-4326-9E7A-B4F8D028810D::net6.0::Quartz.Tests.tests.ecs.EcsTests.TestEntityCreateWithComponentAndDestroy&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::32603830-0881-4326-9E7A-B4F8D028810D::net6.0::Quartz.Tests.tests.ecs.EcsTests&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

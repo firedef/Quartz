@@ -26,11 +26,21 @@ public partial class ArchetypeRoot {
 
 	private Archetype GetArchetype(EntityId id) => _archetypes[(int) _entityArchetypeIdMap[id.id]];
 	
+	/// <summary>
+	/// get archetype for existing entity
+	/// </summary>
+	/// <param name="id">entity id</param>
+	/// <returns>archetype of entity <br/>null if entity does not have components</returns>
 	public Archetype? TryGetArchetype(EntityId id) {
 		uint arch = _entityArchetypeIdMap[id.id];
 		return arch == uint.MaxValue ? null : _archetypes[(int) arch];
 	}
-
+	
+	/// <summary>
+	/// get archetype for entity with specified components
+	/// </summary>
+	/// <param name="types">components</param>
+	/// <returns>archetype of entity <br/>null if types is empty</returns>
 	public Archetype? FindArchetype(ComponentType[] types) {
 		int c = _archetypes.Count;
 		int compCount = types.Length;
@@ -42,28 +52,61 @@ public partial class ArchetypeRoot {
 		return null;
 	}
 
-	public Archetype FindOrCreateArchetype(ComponentType[] types) => FindArchetype(types) ?? AddArchetype(types);
-	public Archetype FindOrCreateArchetype(Type[] types) => FindOrCreateArchetype(types.ToEcsRequiredComponents());
+	/// <summary>
+	/// get archetype for entity with specified components, or create new if does not exist
+	/// </summary>
+	/// <param name="types">components</param>
+	/// <returns>archetype of entity <br/>null if types is empty</returns>
+	public Archetype? FindOrCreateArchetype(ComponentType[] types) => types.Length == 0 ? null : FindArchetype(types) ?? AddArchetype(types);
+	
+	/// <summary>
+	/// get archetype for entity with specified components, or create new if does not exist
+	/// </summary>
+	/// <param name="types">components</param>
+	/// <returns>archetype of entity <br/>null if types is empty</returns>
+	public Archetype? FindOrCreateArchetype(Type[] types) => FindOrCreateArchetype(types.ToEcsRequiredComponents());
 
-	public Archetype FindOrCreateArchetype<T0>() => FindOrCreateArchetype(new[]{typeof(T0)});
-	public Archetype FindOrCreateArchetype<T0, T1>() => FindOrCreateArchetype(new[]{typeof(T0), typeof(T1)});
-	public Archetype FindOrCreateArchetype<T0, T1, T2>() => FindOrCreateArchetype(new[]{typeof(T0), typeof(T1), typeof(T2)});
-	public Archetype FindOrCreateArchetype<T0, T1, T2, T3>() => FindOrCreateArchetype(new[]{typeof(T0), typeof(T1), typeof(T2), typeof(T3)});
-	public Archetype FindOrCreateArchetype<T0, T1, T2, T3, T4>() => FindOrCreateArchetype(new[]{typeof(T0), typeof(T1), typeof(T2), typeof(T3), typeof(T4)});
+	public Archetype FindOrCreateArchetype<T0>() => FindOrCreateArchetype(new[]{typeof(T0)})!;
+	public Archetype FindOrCreateArchetype<T0, T1>() => FindOrCreateArchetype(new[]{typeof(T0), typeof(T1)})!;
+	public Archetype FindOrCreateArchetype<T0, T1, T2>() => FindOrCreateArchetype(new[]{typeof(T0), typeof(T1), typeof(T2)})!;
+	public Archetype FindOrCreateArchetype<T0, T1, T2, T3>() => FindOrCreateArchetype(new[]{typeof(T0), typeof(T1), typeof(T2), typeof(T3)})!;
+	public Archetype FindOrCreateArchetype<T0, T1, T2, T3, T4>() => FindOrCreateArchetype(new[]{typeof(T0), typeof(T1), typeof(T2), typeof(T3), typeof(T4)})!;
 
 #endregion archetypes
 
 #region entities
 
+	/// <summary>
+	/// clone components from 'id' existing entity to 'cloneId' existing entity
+	/// </summary>
+	/// <param name="id">source entity</param>
+	/// <param name="cloneId">destination entity</param>
+	/// <param name="dest">components to copy</param>
 	public void CopyEntity(EntityId id, EntityId cloneId, Archetype dest) {
-		Archetype current = GetArchetype(id);
-		_entityArchetypeIdMap[cloneId.id] = (uint) dest.components.AddFrom(id, dest, current);
+		Archetype? current = TryGetArchetype(id);
+		if (current == null) _entityArchetypeIdMap[cloneId.id] = (uint) dest.components.Add(id);
+		else _entityArchetypeIdMap[cloneId.id] = (uint) dest.components.AddFrom(id, dest, current);
 	}
 
-	public void CopyEntity(EntityId id, EntityId cloneId, Type[] dest) => CopyEntity(id, cloneId, FindOrCreateArchetype(dest));
+	/// <summary>
+	/// clone components from 'id' existing entity to 'cloneId' existing entity
+	/// </summary>
+	/// <param name="id">source entity</param>
+	/// <param name="cloneId">destination entity</param>
+	/// <param name="dest">components to copy</param>
+	public void CopyEntity(EntityId id, EntityId cloneId, Type[] dest) => CopyEntity(id, cloneId, FindOrCreateArchetype(dest)!);
 	
-	private uint MoveEntity(EntityId id, Archetype dest) {
-		Archetype current = GetArchetype(id);
+	private uint MoveEntity(EntityId id, Archetype? dest) {
+		Archetype? current = TryGetArchetype(id);
+		if (current == null) {
+			_entityArchetypeIdMap[id.id] = dest!.id;
+			return (uint) dest.components.Add(id);
+		}
+		if (dest == null) {
+			current.components.RemoveByEntityId(id);
+			_entityArchetypeIdMap.Remove(id.id);
+			return uint.MaxValue;
+		}
 		uint newComponentId = (uint) dest.components.AddFrom(id, dest, current);
 		_entityArchetypeIdMap[id.id] = dest.id;
 		current.components.RemoveByEntityId(id);
@@ -72,50 +115,135 @@ public partial class ArchetypeRoot {
 
 	private uint MoveEntity(EntityId id, ComponentType[] dest) => MoveEntity(id, FindOrCreateArchetype(dest));
 	
+	/// <summary>
+	/// remove all components from existing entity
+	/// </summary>
+	/// <param name="id">entity id</param>
 	public void RemoveEntity(EntityId id) {
-		Archetype current = GetArchetype(id);
-		current.components.RemoveByEntityId(id);
+		Archetype? current = TryGetArchetype(id);
+		current?.components.RemoveByEntityId(id);
 		_entityArchetypeIdMap.Remove(id.id);
 	}
 
+	/// <summary>
+	/// add components of archetype to existing empty entity
+	/// </summary>
+	/// <param name="id">entity id</param>
+	/// <param name="dest">target archetype</param>
 	public void AddEntity(EntityId id, Archetype dest) {
 		dest.components.Add(id);
 		_entityArchetypeIdMap[id.id] = dest.id;
 	}
 	
-	public void AddEntity(EntityId id, params Type[] dest) => AddEntity(id, FindOrCreateArchetype(dest));
+	/// <summary>
+	/// add components to existing empty entity
+	/// </summary>
+	/// <param name="id">entity id</param>
+	/// <param name="dest">components</param>
+	public void AddEntity(EntityId id, params Type[] dest) => AddEntity(id, FindOrCreateArchetype(dest)!);
 
 #endregion entities
 	
 #region components
 
+	/// <summary>
+	/// add component to existing entity
+	/// </summary>
+	/// <param name="id">entity</param>
+	/// <param name="type">component</param>
+	/// <returns>added component pointer</returns>
 	public unsafe void* AddComponent(EntityId id, Type type) {
-		Archetype current = GetArchetype(id);
-		ComponentType[] newTypes = current.componentTypes.AddRequiredType(type);
+		Archetype? current = TryGetArchetype(id);
+		ComponentType[] newTypes = current?.componentTypes.AddRequiredType(type) ?? type.ToEcsRequiredComponents();
 		uint newCompId = MoveEntity(id, newTypes);
 
 		return GetArchetype(id).GetComponent(type.ToEcsComponent(),newCompId);
 	}
+	
+	/// <summary>
+	/// add component to existing entity
+	/// </summary>
+	/// <param name="id">entity</param>
+	/// <returns>added component pointer</returns>
+	public unsafe T* AddComponent<T>(EntityId id) where T : unmanaged, IComponent {
+		Archetype? current = TryGetArchetype(id);
+		ComponentType[] newTypes = current?.componentTypes.AddRequiredType(typeof(T)) ?? typeof(T).ToEcsRequiredComponents();
+		uint newCompId = MoveEntity(id, newTypes);
 
+		T* ptr = (T*) GetArchetype(id).GetComponent(typeof(T).ToEcsComponent(),newCompId);
+		*ptr = new();
+		return ptr;
+	}
+
+	/// <summary>
+	/// try to remove component from entity
+	/// </summary>
+	/// <param name="id">entity</param>
+	/// <param name="type">component</param>
+	/// <returns>true if successfully removed</returns>
 	public bool RemoveComponent(EntityId id, Type type) {
-		Archetype current = GetArchetype(id);
-		if (!current.ContainsComponent(type.ToEcsComponent())) return false;
+		Archetype? current = TryGetArchetype(id);
+		if (current == null || !current.ContainsComponent(type.ToEcsComponent())) return false;
 
 		ComponentType[] newTypes = current.componentTypes.RemoveRequiredType(type);
 		MoveEntity(id, newTypes);
 		return true;
 	}
-
+	
+	/// <summary>
+	/// try to remove component from entity
+	/// </summary>
+	/// <param name="id">entity</param>
+	/// <returns>true if successfully removed</returns>
 	public bool RemoveComponent<T>(EntityId id) where T : unmanaged, IComponent => RemoveComponent(id, typeof(T)); 
 
+	/// <summary>
+	/// get existing component or create new
+	/// </summary>
+	/// <param name="id">entity</param>
+	/// <param name="type">component</param>
+	/// <returns>pointer to component</returns>
 	public unsafe void* GetComponent(EntityId id, Type type) {
-		void* ptr = GetArchetype(id).GetComponent(type.ToEcsComponent(), id.id);
+		Archetype? archetype = TryGetArchetype(id);
+		if (archetype == null) return AddComponent(id, type);
+		void* ptr = archetype.GetComponent(type.ToEcsComponent(), id);
 		return ptr == null ? AddComponent(id, type) : ptr;
 	}
 	
+	/// <summary>
+	/// get existing component or create new
+	/// </summary>
+	/// <param name="id">entity</param>
+	/// <param name="type">component</param>
+	/// <returns>pointer to component</returns>
+	public unsafe void* GetComponent(EntityId id, ComponentType type) {
+		Archetype? archetype = TryGetArchetype(id);
+		if (archetype == null) return AddComponent(id, type.type);
+		void* ptr = archetype.GetComponent(type, id);
+		return ptr == null ? AddComponent(id, type.type) : ptr;
+	}
+	
+	/// <summary>
+	/// get existing component or create new
+	/// </summary>
+	/// <param name="id">entity</param>
+	/// <returns>pointer to component</returns>
 	public unsafe T* GetComponent<T>(EntityId id) where T : unmanaged, IComponent {
-		void* ptr = GetArchetype(id).GetComponent(typeof(T).ToEcsComponent(), id.id);
-		return (T*) (ptr == null ? AddComponent(id, typeof(T)) : ptr);
+		Archetype? archetype = TryGetArchetype(id);
+		if (archetype == null) return AddComponent<T>(id);
+		void* ptr = archetype.GetComponent(typeof(T).ToEcsComponent(), id);
+		return (T*) (ptr == null ? AddComponent<T>(id) : ptr);
+	}
+
+	/// <summary>
+	/// get existing component or return null
+	/// </summary>
+	/// <param name="id">entity</param>
+	/// <returns>pointer to component <br/>null if entity does not have component</returns>
+	public unsafe T* TryGetComponent<T>(EntityId id) where T : unmanaged, IComponent {
+		Archetype? archetype = TryGetArchetype(id);
+		if (archetype == null) return null;
+		return (T*) archetype.GetComponent(typeof(T).ToEcsComponent(), id);
 	}
 
 	public bool ContainsComponent(EntityId id, Type type) => GetArchetype(id).ContainsComponent(type.ToEcsComponent());

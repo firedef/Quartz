@@ -79,6 +79,11 @@ public class Archetype {
 		}
 	}
 	
+	public unsafe void* GetComponent(ComponentType t, EntityId entity) {
+		uint component = components.entityComponentMap[entity.id];
+		return component == uint.MaxValue ? null : GetComponent(t, component);
+	}
+	
 	public uint GetComponentIdFromEntity(EntityId entity) => components.entityComponentMap[entity.id];
 
 	public unsafe void* GetComponent(int componentIndex, uint component) {
@@ -89,6 +94,15 @@ public class Archetype {
 	}
 	
 #endregion components
+
+#region entities
+
+	public void Clear() {
+		foreach (EcsList arr in components.components) arr.count = 0;
+		components.entityComponentMap.Clear();
+	}
+
+#endregion entities
 	
 #region other
 

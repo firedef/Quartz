@@ -1,11 +1,15 @@
+using System.Runtime.InteropServices;
+using Quartz.core;
 using Quartz.objects.ecs.archetypes;
 using Quartz.objects.ecs.components;
 using Quartz.objects.ecs.entities;
 using Quartz.objects.ecs.managed;
 using Quartz.objects.memory;
 
-namespace Quartz.objects.ecs.world; 
+namespace Quartz.objects.ecs.world;
 
+//TODO: prefabs
+//TODO: better hierarchy iteration
 public partial class World {
 #region fields
 
@@ -24,7 +28,7 @@ public partial class World {
 	public int currentEntityCount => entities.elementCount;
 	public int archetypeCount => archetypes.archetypes.Count;
 	public int maxAliveEntityId => entities.count;
-	public int worldCount => _worlds.elementCount;
+	public static int worldCount => _worlds.elementCount;
 	
 	public NativeListPool<Entity> entities { get; } = new(_entityArrayInitialSize);
 	public ArchetypeRoot archetypes { get; } = new();
@@ -74,11 +78,14 @@ public partial class World {
 
 #region archetypes
 
-	public Archetype GetArchetype(params Type[] types) => archetypes.FindOrCreateArchetype(types);
+	public Archetype? GetArchetype(params Type[] types) => archetypes.FindOrCreateArchetype(types);
+	public Archetype? GetEntityArchetype(EntityId entity) => archetypes.TryGetArchetype(entity);
 	
 #endregion archetypes
 
 #region entities
+
+	public bool IsAlive(EntityId entity) => entity.id != uint.MaxValue && entity.id < entities.count && !entities.emptyIndices.Contains(entity);
 	
 	public EntityId CreateEntity() {
 		int id = entities.Add(new());
@@ -86,19 +93,40 @@ public partial class World {
 		return (uint)id;
 	}
 
-	public EntityId CreateEntity(Archetype archetype) {
+	public EntityId CreateEntity(Archetype archetype, InitMode initMode = InitMode.zeroed) {
 		EntityId entity = CreateEntity();
 		archetypes.AddEntity(entity, archetype);
+		InitializeObject(archetype, entity, initMode);
 		return entity;
+	}
+
+	public unsafe void InitializeObject(Archetype archetype, EntityId entity, InitMode initMode) {
+		if (initMode == InitMode.zeroed)
+			foreach (ComponentType type in archetype.componentTypes)
+				QuartzNative.MemSet(Comp(entity, type), 0, (uint) Marshal.SizeOf(type.type));
+		else if (initMode == InitMode.ctor)
+			foreach (ComponentType type in archetype.componentTypes) {
+				object component = Activator.CreateInstance(type.type)!;
+				Marshal.StructureToPtr(component, (IntPtr) Comp(entity, type), false);
+			}
 	}
 
 	public EntityId CreateEntity(params Type[] archetype) => CreateEntity(GetArchetype(archetype));
 
-	public void CreateEntities(int count, Action<EntityId> onCreation) {
+	public void CreateEntities(int count, Action<EntityId> onCreation, InitMode initMode = InitMode.ctor) {
 		entities.AddMultiple(count, i => onCreation( i));
 	}
+
+	public void CreateEntities(int count, Archetype archetype, Action<EntityId> onCreation, InitMode initMode = InitMode.ctor) {
+		switch (initMode) {
+			case InitMode.uninitialized: CreateEntities_uninitialized(count, archetype, onCreation); break;
+			case InitMode.zeroed:        CreateEntities_zeroed(count, archetype, onCreation); break;
+			case InitMode.ctor:          CreateEntities_ctor(count, archetype, onCreation); break;
+			default:                     throw new ArgumentOutOfRangeException(nameof(initMode), initMode, null);
+		}
+	}
 	
-	public void CreateEntities(int count, Archetype archetype, Action<EntityId> onCreation) {
+	private void CreateEntities_uninitialized(int count, Archetype archetype, Action<EntityId> onCreation) {
 		archetype.PreAllocate(count);
 		entities.AddMultiple(count, i => {
 			EntityId ent = i;
@@ -106,10 +134,80 @@ public partial class World {
 			onCreation(ent);
 		});
 	}
+	
+	private void CreateEntities_zeroed(int count, Archetype archetype, Action<EntityId> onCreation) {
+		archetype.PreAllocate(count);
+		entities.AddMultiple(count, i => {
+			EntityId ent = i;
+			archetypes.AddEntity(ent, archetype);
+			InitializeObject(archetype, ent, InitMode.zeroed);
+			onCreation(ent);
+		});
+	}
+	
+	private unsafe void CreateEntities_ctor(int count, Archetype archetype, Action<EntityId> onCreation) {
+		archetype.PreAllocate(count);
+		int compCount = archetype.componentTypes.Length;
+
+		(IntPtr obj, IntPtr arr, int size)[] components = new (IntPtr, IntPtr, int)[compCount];
+		for (int i = 0; i < compCount; i++) {
+			object comp = Activator.CreateInstance(archetype.componentTypes[i].type)!;
+			int size = Marshal.SizeOf(archetype.componentTypes[i].type);
+			IntPtr allocation = (IntPtr) MemoryAllocator.Allocate(size);
+			Marshal.StructureToPtr(comp, allocation, false);
+			components[i] = (allocation, (IntPtr) archetype.GetComponent(i, 0), size);
+		}
+		
+		entities.AddMultiple(count, i => {
+			EntityId ent = i;
+			archetypes.AddEntity(ent, archetype);
+
+			uint offset = archetype.GetComponentIdFromEntity(ent);
+			foreach ((IntPtr obj, IntPtr arr, int size) in components)
+				QuartzNative.MemCpy((byte*)arr + offset * size, (void*) obj, (uint) size);
+			
+			onCreation(ent);
+		});
+		
+		for (int i = 0; i < compCount; i++) {
+			MemoryAllocator.Free((void*) components[i].obj);
+		}
+	}
 
 	public void DestroyEntity(EntityId id) {
 		entities.RemoveAt((int) id.id);
 		archetypes.RemoveEntity(id);
+	}
+	
+	public void DestroyEntities(Archetype? archetype) {
+		if (archetype == null) {
+			DestroyEntitiesWhich(e => GetEntityArchetype(e) == null);
+			return;
+		}
+		int c = archetype.components.entityCount;
+		for (int i = 0; i < c; i++) {
+			EntityId entity = archetype.components.entityComponentMap.GetVal((uint) i);
+			entities.RemoveAt(entity);
+		}
+		
+		archetype.Clear();
+	}
+
+	public void DestroyEntitiesWhich(Predicate<EntityId> predicate) {
+		int pos = 0;
+		while (pos < entities.count) {
+			if (entities.emptyIndices.Contains(pos)) {
+				pos++;
+				continue;
+			}
+			EntityId entity = pos;
+			if (predicate(entity)) DestroyEntity(pos);
+			else pos++;
+		}
+	}
+
+	public void Clear() {
+		DestroyEntitiesWhich(_ => true);
 	}
 
 #endregion entities
@@ -117,6 +215,9 @@ public partial class World {
 #region components
 	
 	public unsafe T* Comp<T>(EntityId id) where T : unmanaged, IComponent => archetypes.GetComponent<T>(id);
+	public unsafe T* TryComp<T>(EntityId id) where T : unmanaged, IComponent => archetypes.TryGetComponent<T>(id);
+	
+	public unsafe void* Comp(EntityId id, ComponentType t) => archetypes.GetComponent(id, t);
 
 	public bool Remove<T>(EntityId id) where T : unmanaged, IComponent => archetypes.RemoveComponent<T>(id);
 

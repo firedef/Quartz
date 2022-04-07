@@ -305,7 +305,6 @@ public readonly struct None<T1> : IEcsFilter
     public Type[] GetTypeArray() => new[] {typeof(T1)};
 
     public bool Filter(Archetype archetype) { 
-        if (archetype.componentTypes.Length < 1) return true;
         if (archetype.ContainsComponent(typeof(T1))) return false;
         return true;
     }
@@ -318,7 +317,6 @@ public readonly struct None<T1, T2> : IEcsFilter
     public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2)};
 
     public bool Filter(Archetype archetype) { 
-        if (archetype.componentTypes.Length < 2) return true;
         if (archetype.ContainsComponent(typeof(T1))) return false;
         if (archetype.ContainsComponent(typeof(T2))) return false;
         return true;
@@ -333,7 +331,6 @@ public readonly struct None<T1, T2, T3> : IEcsFilter
     public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2), typeof(T3)};
 
     public bool Filter(Archetype archetype) { 
-        if (archetype.componentTypes.Length < 3) return true;
         if (archetype.ContainsComponent(typeof(T1))) return false;
         if (archetype.ContainsComponent(typeof(T2))) return false;
         if (archetype.ContainsComponent(typeof(T3))) return false;
@@ -350,7 +347,6 @@ public readonly struct None<T1, T2, T3, T4> : IEcsFilter
     public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2), typeof(T3), typeof(T4)};
 
     public bool Filter(Archetype archetype) { 
-        if (archetype.componentTypes.Length < 4) return true;
         if (archetype.ContainsComponent(typeof(T1))) return false;
         if (archetype.ContainsComponent(typeof(T2))) return false;
         if (archetype.ContainsComponent(typeof(T3))) return false;
@@ -369,7 +365,6 @@ public readonly struct None<T1, T2, T3, T4, T5> : IEcsFilter
     public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5)};
 
     public bool Filter(Archetype archetype) { 
-        if (archetype.componentTypes.Length < 5) return true;
         if (archetype.ContainsComponent(typeof(T1))) return false;
         if (archetype.ContainsComponent(typeof(T2))) return false;
         if (archetype.ContainsComponent(typeof(T3))) return false;
@@ -390,7 +385,6 @@ public readonly struct None<T1, T2, T3, T4, T5, T6> : IEcsFilter
     public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6)};
 
     public bool Filter(Archetype archetype) { 
-        if (archetype.componentTypes.Length < 6) return true;
         if (archetype.ContainsComponent(typeof(T1))) return false;
         if (archetype.ContainsComponent(typeof(T2))) return false;
         if (archetype.ContainsComponent(typeof(T3))) return false;
@@ -413,7 +407,6 @@ public readonly struct None<T1, T2, T3, T4, T5, T6, T7> : IEcsFilter
     public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7)};
 
     public bool Filter(Archetype archetype) { 
-        if (archetype.componentTypes.Length < 7) return true;
         if (archetype.ContainsComponent(typeof(T1))) return false;
         if (archetype.ContainsComponent(typeof(T2))) return false;
         if (archetype.ContainsComponent(typeof(T3))) return false;
@@ -438,7 +431,6 @@ public readonly struct None<T1, T2, T3, T4, T5, T6, T7, T8> : IEcsFilter
     public Type[] GetTypeArray() => new[] {typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5), typeof(T6), typeof(T7), typeof(T8)};
 
     public bool Filter(Archetype archetype) { 
-        if (archetype.componentTypes.Length < 8) return true;
         if (archetype.ContainsComponent(typeof(T1))) return false;
         if (archetype.ContainsComponent(typeof(T2))) return false;
         if (archetype.ContainsComponent(typeof(T3))) return false;
