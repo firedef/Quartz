@@ -33,6 +33,14 @@ public static class HierarchyExtensions {
 		return index;
 	}
 
+	public static void AddChild(this EntityId parent, EntityId child) => parent.world.AddChild(parent, child);
+
+	public static EntityId AddChild(this EntityId parent) {
+		EntityId child = parent.world.CreateEntity();
+		parent.AddChild(child);
+		return child;
+	}
+
 	public static unsafe bool RemoveChild(this World world, EntityId parent, EntityId child) {
 		HierarchyComponent* parentHierarchy = world.Comp<HierarchyComponent>(parent);
 		HierarchyComponent* childHierarchy = world.Comp<HierarchyComponent>(child);
@@ -96,6 +104,8 @@ public static class HierarchyExtensions {
 		ForeachSibling(world, entity, a);
 	}
 	
+	public static unsafe void ForeachChild(this EntityId entity, EcsDelegates.ComponentEntityDelegate<HierarchyComponent> a) => entity.world.ForeachChild(entity, a);
+	
 	public static unsafe void ForeachSibling(this World world, EntityId entity, EcsDelegates.ComponentEntityDelegate<HierarchyComponent> a) {
 		HierarchyComponent* ptr = world.TryComp<HierarchyComponent>(entity);
 		if (ptr == null) return;
@@ -117,4 +127,5 @@ public static class HierarchyExtensions {
 			a(ptr, entity);
 		}
 	}
+
 }

@@ -90,6 +90,7 @@ public class EcsTests {
 		World world = World.general;
 		world.Clear();
 		
+		Assert.AreEqual(0, world.currentEntityCount);
 		world.CreateEntities<TestComponent>(100);
 		world.CreateEntities<TestComponentB>(200);
 		world.CreateEntities<TestComponent, TestComponentB>(300);

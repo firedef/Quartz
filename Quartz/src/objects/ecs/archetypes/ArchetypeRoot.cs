@@ -87,7 +87,9 @@ public partial class ArchetypeRoot {
 		if (current == null) _entityArchetypeIdMap[cloneId.id] = (uint) dest.components.Add(id);
 		else _entityArchetypeIdMap[cloneId.id] = (uint) dest.components.AddFrom(id, dest, current);
 	}
-
+	
+	public static void CopyEntityComponents(EntityId src, EntityId dest, Archetype srcArch, Archetype destArch) => destArch.components.CopyFrom(dest, src, destArch, srcArch);
+	
 	/// <summary>
 	/// clone components from 'id' existing entity to 'cloneId' existing entity
 	/// </summary>
@@ -99,16 +101,14 @@ public partial class ArchetypeRoot {
 	private uint MoveEntity(EntityId id, Archetype? dest) {
 		Archetype? current = TryGetArchetype(id);
 		if (current == null) {
-			_entityArchetypeIdMap[id.id] = dest!.id;
-			return (uint) dest.components.Add(id);
+			return AddEntity(id, dest!);
 		}
 		if (dest == null) {
-			current.components.RemoveByEntityId(id);
-			_entityArchetypeIdMap.Remove(id.id);
+			RemoveEntity(id);
 			return uint.MaxValue;
 		}
 		uint newComponentId = (uint) dest.components.AddFrom(id, dest, current);
-		_entityArchetypeIdMap[id.id] = dest.id;
+		_entityArchetypeIdMap.Set(id.id, dest.id);
 		current.components.RemoveByEntityId(id);
 		return newComponentId;
 	}
@@ -130,9 +130,10 @@ public partial class ArchetypeRoot {
 	/// </summary>
 	/// <param name="id">entity id</param>
 	/// <param name="dest">target archetype</param>
-	public void AddEntity(EntityId id, Archetype dest) {
-		dest.components.Add(id);
+	public uint AddEntity(EntityId id, Archetype dest) {
+		int c = dest.components.Add(id);
 		_entityArchetypeIdMap[id.id] = dest.id;
+		return (uint) c;
 	}
 	
 	/// <summary>
@@ -181,9 +182,17 @@ public partial class ArchetypeRoot {
 	/// <param name="id">entity</param>
 	/// <param name="type">component</param>
 	/// <returns>true if successfully removed</returns>
-	public bool RemoveComponent(EntityId id, Type type) {
+	public bool RemoveComponent(EntityId id, Type type) => RemoveComponent(id, type.ToEcsComponent());
+
+	/// <summary>
+	/// try to remove component from entity
+	/// </summary>
+	/// <param name="id">entity</param>
+	/// <param name="type">component</param>
+	/// <returns>true if successfully removed</returns>
+	public bool RemoveComponent(EntityId id, ComponentType type) {
 		Archetype? current = TryGetArchetype(id);
-		if (current == null || !current.ContainsComponent(type.ToEcsComponent())) return false;
+		if (current == null || !current.ContainsComponent(type)) return false;
 
 		ComponentType[] newTypes = current.componentTypes.RemoveRequiredType(type);
 		MoveEntity(id, newTypes);
@@ -223,6 +232,11 @@ public partial class ArchetypeRoot {
 		return ptr == null ? AddComponent(id, type.type) : ptr;
 	}
 	
+	public unsafe void* TryGetComponent(EntityId id, ComponentType type) {
+		Archetype? archetype = TryGetArchetype(id);
+		return archetype == null ? null : archetype.GetComponent(type, id);
+	}
+
 	/// <summary>
 	/// get existing component or create new
 	/// </summary>

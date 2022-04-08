@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Quartz.collections;
+using Quartz.core;
 using Quartz.objects.ecs.components;
 using Quartz.objects.ecs.delegates;
 using Quartz.objects.ecs.entities;
@@ -35,12 +36,28 @@ public class EcsChunk {
 				continue;
 			}
 
-			int offset = otherComponentId * components[i].elementSize;
-			components[i].AddFrom((byte*) src.components.components[copyFromIndex].rawData + offset);
+			int srcOffset = otherComponentId * components[i].elementSize;
+			components[i].AddFrom((byte*) src.components.components[copyFromIndex].rawData + srcOffset);
 		}
 		
 		entityComponentMap[entity.id] = (uint) id;
 		return id;
+	}
+
+	public unsafe void CopyFrom(EntityId current, EntityId src, Archetype currentArch, Archetype srcArch) {
+		int curComponentId = (int) entityComponentMap[current];
+		int currentComponentCount = components.Length;
+		int srcComponentId = (int) srcArch.components.entityComponentMap[src.id];
+
+		for (int i = 0; i < currentComponentCount; i++) {
+			int copyFromIndex = srcArch.IndexOfComponent(currentArch.componentTypes[i]);
+			if (copyFromIndex == -1) continue;
+
+			int elementSize = components[i].elementSize;
+			int srcOffset = srcComponentId * elementSize;
+			int dstOffset = curComponentId * elementSize;
+			QuartzNative.MemCpy((byte*) components[i].rawData + dstOffset, (byte*) srcArch.components.components[copyFromIndex].rawData + srcOffset, (uint) elementSize);
+		}
 	}
 
 	public void RemoveByComponentId(int index) {

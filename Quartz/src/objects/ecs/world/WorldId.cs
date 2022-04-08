@@ -1,15 +1,17 @@
 namespace Quartz.objects.ecs.world; 
 
-public struct WorldId {
-	public readonly uint id;
+public readonly struct WorldId {
+	public static readonly WorldId @null = new(ushort.MaxValue);
+	public readonly ushort id;
 
-	public bool isValid => id != uint.MaxValue;
+	public World world => World.GetWorld(id);
+
+	public bool isValid => id != ushort.MaxValue;
 	
-	public WorldId(uint id) => this.id = id;
+	public WorldId(ushort id) => this.id = id;
 
-	public static implicit operator uint(WorldId v) => v.id;
-	public static implicit operator WorldId(uint v) => new(v);
+	public static implicit operator ushort(WorldId v) => v.id;
+	public static implicit operator WorldId(ushort v) => new(v);
 	
 	public override string ToString() => id.ToString();
-	
 }

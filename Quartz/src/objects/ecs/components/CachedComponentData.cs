@@ -113,4 +113,10 @@ public static class CachedComponents {
 		hashset.Remove(other.ToEcsComponent());
 		return hashset.ToArray();
 	}
+	
+	public static ComponentType[] RemoveRequiredType(this IEnumerable<ComponentType> arr, ComponentType other) {
+		HashSet<ComponentType> hashset = arr.ToHashSet();
+		hashset.Remove(other);
+		return hashset.ToArray();
+	}
 }

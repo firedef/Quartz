@@ -3,9 +3,15 @@ using Quartz.objects.ecs.world;
 namespace Quartz.objects.scenes; 
 
 public class Scene {
-	public World ecsWorld = World.Create();
+	public string name;
+	public readonly World world;
+
+	public Scene(string name) {
+		this.name = name;
+		world = World.Create(name);
+	}
 
 	public void Destroy() {
-		ecsWorld.Destroy();
+		world.Destroy();
 	}
 }

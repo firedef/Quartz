@@ -13,7 +13,7 @@ public static class SceneManager {
 	}
 
 	public static Scene LoadEmptyScene(bool open = true) {
-		Scene scene = new();
+		Scene scene = new("empty scene");
 
 		if (open) OpenScene(scene);
 		return scene;

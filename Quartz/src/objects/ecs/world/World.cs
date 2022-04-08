@@ -3,41 +3,47 @@ using Quartz.core;
 using Quartz.objects.ecs.archetypes;
 using Quartz.objects.ecs.components;
 using Quartz.objects.ecs.entities;
-using Quartz.objects.ecs.managed;
+using Quartz.objects.hierarchy.ecs;
 using Quartz.objects.memory;
 
 namespace Quartz.objects.ecs.world;
 
-//TODO: prefabs
 //TODO: better hierarchy iteration
 public partial class World {
 #region fields
 
-	private const int _entityArrayInitialSize = 1 << 16;
 	private readonly object _currentLock = new();
-	
-	private static readonly ManagedListPool<World> _worlds = new();
-	public static readonly World general = Create();
 
+	/// <summary>current 16-bit world id</summary>
 	public WorldId worldId { get; protected set; }
-	
+
+	/// <summary>true, if world is alive (not null)</summary>
 	public bool isAlive { get; private set; } = true;
+
+	/// <summary>true, is world is participate in events</summary>
 	public bool isActive { get; private set; } = true;
+	
+	/// <summary>true, is world is renderable</summary>
 	public bool isVisible { get; private set; } = true;
 
-	public int currentEntityCount => entities.elementCount;
+	/// <summary>current alive entity count of this world</summary>
+	public int currentEntityCount { get; private set; }
+
+	/// <summary>current archetype count of this world</summary>
 	public int archetypeCount => archetypes.archetypes.Count;
-	public int maxAliveEntityId => entities.count;
-	public static int worldCount => _worlds.elementCount;
-	
-	public NativeListPool<Entity> entities { get; } = new(_entityArrayInitialSize);
-	public ArchetypeRoot archetypes { get; } = new();
+
+	public string worldName = "unnamed";
+
+	private readonly ArchetypeRoot archetypes = new();
 	
 #endregion fields
 
 #region stats
-	
+
+	/// <summary>count components on alive entities</summary>
 	public int GetTotalComponentCount() => archetypes.archetypes.Sum(archetype => archetype.componentTypes.Length * archetype.components.entityCount);
+	
+	/// <summary>count unique components on all archetypes</summary>
 	public int GetUniqueComponentCount() {
 		HashSet<ComponentType> types = new();
 		foreach (ComponentType type in archetypes.archetypes.SelectMany(archetype => archetype.componentTypes))
@@ -50,49 +56,102 @@ public partial class World {
 #region world
 
 	private World(WorldId worldId) => this.worldId = worldId;
-	
+
+	/// <summary>set world active state, to process events or not</summary>
 	public void SetActive(bool v) => isActive = v;
+	
+	/// <summary>set world visible state, to render entities or not</summary>
 	public void SetVisible(bool v) => isVisible = v;
 
+	/// <summary>destroy this world with all entities</summary>
 	public void Destroy() {
 		isAlive = false;
 		isActive = false;
-		_worlds.RemoveAt((int) worldId.id);
+		isVisible = false;
+		DestroyEntitiesWhich(e => e.worldId.id == worldId.id);
+		_worlds.RemoveAt(worldId.id);
 	}
 
-	public static World Create() {
+	/// <summary>create new world</summary>
+	public static World Create(string name) {
 		World world = new(0);
 		int id = _worlds.Add(world);
-		world.worldId = (uint) id;
+		world.worldId = (ushort) id;
+		world.worldName = name;
 		return world;
-	}
-
-	public static void ForeachWorld(Action<World> a) {
-		int c = _worlds.storage.Count;
-		for (int i = 0; i < c; i++)
-			if (!_worlds.emptyIndices.Contains(i)) 
-				a(_worlds.storage[i]);
 	}
 
 #endregion world
 
 #region archetypes
 
+	/// <summary>get archetype from types, or return null if types is empty</summary>
 	public Archetype? GetArchetype(params Type[] types) => archetypes.FindOrCreateArchetype(types);
+	
+	/// <summary>get archetype from types, or return null if types is empty</summary>
+	public Archetype? GetArchetype(params ComponentType[] types) => archetypes.FindOrCreateArchetype(types);
+
+	/// <summary>get archetype of alive entity, or return null if entity does not have any components</summary>
 	public Archetype? GetEntityArchetype(EntityId entity) => archetypes.TryGetArchetype(entity);
 	
 #endregion archetypes
 
 #region entities
 
-	public bool IsAlive(EntityId entity) => entity.id != uint.MaxValue && entity.id < entities.count && !entities.emptyIndices.Contains(entity);
+	/// <summary>check if entity is alive</summary>
+	public static bool IsAlive(EntityId entity) => entity.id != uint.MaxValue && entity.id < _entities.count && _entities[entity].isAlive;
 	
-	public EntityId CreateEntity() {
-		int id = entities.Add(new());
-		entities[id] = new((uint)id, worldId);
-		return (uint)id;
+	private int CreateEmptyEntity() {
+		lock (_globalLock) {
+			int c = _entities.count;
+
+			if (deadEntityCount == 0) {
+				globalEntityCount++;
+				currentEntityCount++;
+				return _entities.Add(new(c, worldId, EntityFlags.isAlive));
+			}
+			
+			globalEntityCount++;
+			currentEntityCount++;
+
+			for (int i = 0; i < c; i++) {
+				if (_entities[i].isAlive) continue;
+				_entities[i] = _entities[i] with {id = i, world = worldId, flags = EntityFlags.isAlive};
+				return i;
+			}
+
+			throw new IndexOutOfRangeException();
+		}
+	}
+	
+	private void CreateEmptyEntities(int count, Action<EntityId> onCreation) {
+		lock (_globalLock) {
+			int c = _entities.count;
+
+			for (int i = 0; i < c; i++) {
+				if (deadEntityCount == 0) break;
+				
+				if (_entities[i].isAlive) continue;
+				_entities[i] = new(i, worldId, EntityFlags.isAlive);
+				onCreation(i);
+				count--;
+				globalEntityCount++;
+				currentEntityCount++;
+			}
+			
+			for (int i = 0; i < count; i++) {
+				_entities.Add(new(c + i, worldId, EntityFlags.isAlive));
+				onCreation(c + i);
+				globalEntityCount++;
+				currentEntityCount++;
+			}
+		}
 	}
 
+	/// <summary>create empty entity</summary>
+	public EntityId CreateEntity() => CreateEmptyEntity();
+
+	/// <summary>create entity with components</summary>
 	public EntityId CreateEntity(Archetype archetype, InitMode initMode = InitMode.zeroed) {
 		EntityId entity = CreateEntity();
 		archetypes.AddEntity(entity, archetype);
@@ -100,6 +159,7 @@ public partial class World {
 		return entity;
 	}
 
+	/// <summary>initialize/reset components of entity</summary>
 	public unsafe void InitializeObject(Archetype archetype, EntityId entity, InitMode initMode) {
 		if (initMode == InitMode.zeroed)
 			foreach (ComponentType type in archetype.componentTypes)
@@ -111,12 +171,13 @@ public partial class World {
 			}
 	}
 
-	public EntityId CreateEntity(params Type[] archetype) => CreateEntity(GetArchetype(archetype));
+	/// <summary>create entity with components</summary>
+	public EntityId CreateEntity(params Type[] archetype) => CreateEntity(GetArchetype(archetype)!);
 
-	public void CreateEntities(int count, Action<EntityId> onCreation, InitMode initMode = InitMode.ctor) {
-		entities.AddMultiple(count, i => onCreation( i));
-	}
+	/// <summary>create multiple empty entities</summary>
+	public void CreateEntities(int count, Action<EntityId> onCreation, InitMode initMode = InitMode.ctor) => CreateEmptyEntities(count, onCreation);
 
+	/// <summary>create multiple entities with components</summary>
 	public void CreateEntities(int count, Archetype archetype, Action<EntityId> onCreation, InitMode initMode = InitMode.ctor) {
 		switch (initMode) {
 			case InitMode.uninitialized: CreateEntities_uninitialized(count, archetype, onCreation); break;
@@ -128,20 +189,18 @@ public partial class World {
 	
 	private void CreateEntities_uninitialized(int count, Archetype archetype, Action<EntityId> onCreation) {
 		archetype.PreAllocate(count);
-		entities.AddMultiple(count, i => {
-			EntityId ent = i;
-			archetypes.AddEntity(ent, archetype);
-			onCreation(ent);
+		CreateEmptyEntities(count, i => {
+			archetypes.AddEntity(i, archetype);
+			onCreation(i);
 		});
 	}
 	
 	private void CreateEntities_zeroed(int count, Archetype archetype, Action<EntityId> onCreation) {
 		archetype.PreAllocate(count);
-		entities.AddMultiple(count, i => {
-			EntityId ent = i;
-			archetypes.AddEntity(ent, archetype);
-			InitializeObject(archetype, ent, InitMode.zeroed);
-			onCreation(ent);
+		CreateEmptyEntities(count, i => {
+			archetypes.AddEntity(i, archetype);
+			InitializeObject(archetype, i, InitMode.zeroed);
+			onCreation(i);
 		});
 	}
 	
@@ -158,15 +217,14 @@ public partial class World {
 			components[i] = (allocation, (IntPtr) archetype.GetComponent(i, 0), size);
 		}
 		
-		entities.AddMultiple(count, i => {
-			EntityId ent = i;
-			archetypes.AddEntity(ent, archetype);
+		CreateEmptyEntities(count, i => {
+			archetypes.AddEntity(i, archetype);
 
-			uint offset = archetype.GetComponentIdFromEntity(ent);
+			uint offset = archetype.GetComponentIdFromEntity(i);
 			foreach ((IntPtr obj, IntPtr arr, int size) in components)
 				QuartzNative.MemCpy((byte*)arr + offset * size, (void*) obj, (uint) size);
 			
-			onCreation(ent);
+			onCreation(i);
 		});
 		
 		for (int i = 0; i < compCount; i++) {
@@ -174,11 +232,30 @@ public partial class World {
 		}
 	}
 
+	private static void RemoveEmptyEntity(int index) {
+		lock (_globalLock) {
+			if (index == maxAliveEntityId) {
+				globalEntityCount--;
+				_entities[index].world.world.currentEntityCount--;
+				index--;
+				while (index >= 0 && !_entities[index].isAlive) index--;
+				_entities.count = index + 1;
+				return;
+			}
+
+			_entities[index].world.world.currentEntityCount--;
+			_entities[index] = Entity.@null with { version = _entities[index].version + 1 };
+			globalEntityCount--;
+		}
+	}
+
+	/// <summary>destroy entity and components, if present</summary>
 	public void DestroyEntity(EntityId id) {
-		entities.RemoveAt((int) id.id);
+		RemoveEmptyEntity(id);
 		archetypes.RemoveEntity(id);
 	}
-	
+
+	/// <summary>destroy all entities of specified archetype</summary>
 	public void DestroyEntities(Archetype? archetype) {
 		if (archetype == null) {
 			DestroyEntitiesWhich(e => GetEntityArchetype(e) == null);
@@ -186,17 +263,18 @@ public partial class World {
 		}
 		int c = archetype.components.entityCount;
 		for (int i = 0; i < c; i++) {
-			EntityId entity = archetype.components.entityComponentMap.GetVal((uint) i);
-			entities.RemoveAt(entity);
+			EntityId entity = archetype.components.entityComponentMap.GetKey((uint) i);
+			DestroyEntity(entity);
 		}
 		
 		archetype.Clear();
 	}
 
+	/// <summary>destroy all entities which match predicate</summary>
 	public void DestroyEntitiesWhich(Predicate<EntityId> predicate) {
 		int pos = 0;
-		while (pos < entities.count) {
-			if (entities.emptyIndices.Contains(pos)) {
+		while (pos < _entities.count) {
+			if (!_entities[pos].isAlive) {
 				pos++;
 				continue;
 			}
@@ -206,27 +284,63 @@ public partial class World {
 		}
 	}
 
+	/// <summary>destroy all entities of this world</summary>
 	public void Clear() {
-		DestroyEntitiesWhich(_ => true);
+		DestroyEntitiesWhich(e => e.worldId.id == worldId.id);
+	}
+
+	public unsafe EntityId Clone(EntityId src, bool recursive = true) {
+		World srcWorld = src.world;
+		Archetype? srcArchetype = srcWorld.GetEntityArchetype(src);
+
+		if (srcArchetype == null) return CreateEntity();
+		
+		Archetype curArchetype = GetArchetype(srcArchetype.componentTypes)!;
+		EntityId cur = CreateEntity(curArchetype);
+		ArchetypeRoot.CopyEntityComponents(src, cur, srcArchetype, curArchetype);
+
+		if (recursive && srcArchetype.ContainsComponent(typeof(HierarchyComponent))) {
+			src.ForeachChild((hComp, entity) => {
+				this.AddChild(cur, Clone(entity));
+			});
+		}
+		
+		return cur;
 	}
 
 #endregion entities
 
 #region components
-	
+
+	/// <summary>get component, or create new</summary>
 	public unsafe T* Comp<T>(EntityId id) where T : unmanaged, IComponent => archetypes.GetComponent<T>(id);
-	public unsafe T* TryComp<T>(EntityId id) where T : unmanaged, IComponent => archetypes.TryGetComponent<T>(id);
 	
+	/// <summary>get component, or create new</summary>
 	public unsafe void* Comp(EntityId id, ComponentType t) => archetypes.GetComponent(id, t);
 
+	/// <summary>get component, or return null if entity does not have it</summary>
+	public unsafe T* TryComp<T>(EntityId id) where T : unmanaged, IComponent => archetypes.TryGetComponent<T>(id);
+	
+	/// <summary>get component, or return null if entity does not have it</summary>
+	public unsafe void* TryComp(EntityId id, ComponentType t) => archetypes.TryGetComponent(id, t);
+
+	/// <summary>try to remove component from entity</summary>
 	public bool Remove<T>(EntityId id) where T : unmanaged, IComponent => archetypes.RemoveComponent<T>(id);
+	
+	/// <summary>try to remove component from entity</summary>
+	public bool Remove(EntityId id, ComponentType t) => archetypes.RemoveComponent(id, t);
 
 #endregion components
 
 #region other
 
+	/// <summary>lock current world</summary>
 	public void Lock() => Monitor.Enter(_currentLock);
+	
+	/// <summary>try to lock current world</summary>
 	public bool TryLock() => Monitor.TryEnter(_currentLock);
+
+	/// <summary>unlock current world</summary>
 	public void Unlock() => Monitor.Exit(_currentLock);
 
 #endregion other

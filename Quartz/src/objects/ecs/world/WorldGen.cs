@@ -68,10 +68,9 @@ public partial class World {
 		archetype.PreAllocate(count);
 
 		T1* c1 = (T1*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T1).ToEcsComponent()), 0);
-		entities.AddMultiple(count, i => {
-			EntityId ent = i;
-			archetypes.AddEntity(ent, archetype);
-			uint offset = archetype.GetComponentIdFromEntity(ent);
+		CreateEmptyEntities(count, i => {
+			archetypes.AddEntity(i, archetype);
+			uint offset = archetype.GetComponentIdFromEntity(i);
 			onEntityCreation(c1 + offset);
 		});
 	}
@@ -258,10 +257,9 @@ public partial class World {
 
 		T1* c1 = (T1*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T1).ToEcsComponent()), 0);
 		T2* c2 = (T2*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T2).ToEcsComponent()), 0);
-		entities.AddMultiple(count, i => {
-			EntityId ent = i;
-			archetypes.AddEntity(ent, archetype);
-			uint offset = archetype.GetComponentIdFromEntity(ent);
+		CreateEmptyEntities(count, i => {
+			archetypes.AddEntity(i, archetype);
+			uint offset = archetype.GetComponentIdFromEntity(i);
 			onEntityCreation(c1 + offset, c2 + offset);
 		});
 	}
@@ -475,10 +473,9 @@ public partial class World {
 		T1* c1 = (T1*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T1).ToEcsComponent()), 0);
 		T2* c2 = (T2*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T2).ToEcsComponent()), 0);
 		T3* c3 = (T3*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T3).ToEcsComponent()), 0);
-		entities.AddMultiple(count, i => {
-			EntityId ent = i;
-			archetypes.AddEntity(ent, archetype);
-			uint offset = archetype.GetComponentIdFromEntity(ent);
+		CreateEmptyEntities(count, i => {
+			archetypes.AddEntity(i, archetype);
+			uint offset = archetype.GetComponentIdFromEntity(i);
 			onEntityCreation(c1 + offset, c2 + offset, c3 + offset);
 		});
 	}
@@ -719,10 +716,9 @@ public partial class World {
 		T2* c2 = (T2*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T2).ToEcsComponent()), 0);
 		T3* c3 = (T3*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T3).ToEcsComponent()), 0);
 		T4* c4 = (T4*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T4).ToEcsComponent()), 0);
-		entities.AddMultiple(count, i => {
-			EntityId ent = i;
-			archetypes.AddEntity(ent, archetype);
-			uint offset = archetype.GetComponentIdFromEntity(ent);
+		CreateEmptyEntities(count, i => {
+			archetypes.AddEntity(i, archetype);
+			uint offset = archetype.GetComponentIdFromEntity(i);
 			onEntityCreation(c1 + offset, c2 + offset, c3 + offset, c4 + offset);
 		});
 	}
@@ -990,10 +986,9 @@ public partial class World {
 		T3* c3 = (T3*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T3).ToEcsComponent()), 0);
 		T4* c4 = (T4*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T4).ToEcsComponent()), 0);
 		T5* c5 = (T5*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T5).ToEcsComponent()), 0);
-		entities.AddMultiple(count, i => {
-			EntityId ent = i;
-			archetypes.AddEntity(ent, archetype);
-			uint offset = archetype.GetComponentIdFromEntity(ent);
+		CreateEmptyEntities(count, i => {
+			archetypes.AddEntity(i, archetype);
+			uint offset = archetype.GetComponentIdFromEntity(i);
 			onEntityCreation(c1 + offset, c2 + offset, c3 + offset, c4 + offset, c5 + offset);
 		});
 	}
@@ -1288,10 +1283,9 @@ public partial class World {
 		T4* c4 = (T4*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T4).ToEcsComponent()), 0);
 		T5* c5 = (T5*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T5).ToEcsComponent()), 0);
 		T6* c6 = (T6*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T6).ToEcsComponent()), 0);
-		entities.AddMultiple(count, i => {
-			EntityId ent = i;
-			archetypes.AddEntity(ent, archetype);
-			uint offset = archetype.GetComponentIdFromEntity(ent);
+		CreateEmptyEntities(count, i => {
+			archetypes.AddEntity(i, archetype);
+			uint offset = archetype.GetComponentIdFromEntity(i);
 			onEntityCreation(c1 + offset, c2 + offset, c3 + offset, c4 + offset, c5 + offset, c6 + offset);
 		});
 	}
@@ -1613,10 +1607,9 @@ public partial class World {
 		T5* c5 = (T5*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T5).ToEcsComponent()), 0);
 		T6* c6 = (T6*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T6).ToEcsComponent()), 0);
 		T7* c7 = (T7*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T7).ToEcsComponent()), 0);
-		entities.AddMultiple(count, i => {
-			EntityId ent = i;
-			archetypes.AddEntity(ent, archetype);
-			uint offset = archetype.GetComponentIdFromEntity(ent);
+		CreateEmptyEntities(count, i => {
+			archetypes.AddEntity(i, archetype);
+			uint offset = archetype.GetComponentIdFromEntity(i);
 			onEntityCreation(c1 + offset, c2 + offset, c3 + offset, c4 + offset, c5 + offset, c6 + offset, c7 + offset);
 		});
 	}
@@ -1965,10 +1958,9 @@ public partial class World {
 		T6* c6 = (T6*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T6).ToEcsComponent()), 0);
 		T7* c7 = (T7*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T7).ToEcsComponent()), 0);
 		T8* c8 = (T8*)archetype.GetComponent(archetype.IndexOfComponent(typeof(T8).ToEcsComponent()), 0);
-		entities.AddMultiple(count, i => {
-			EntityId ent = i;
-			archetypes.AddEntity(ent, archetype);
-			uint offset = archetype.GetComponentIdFromEntity(ent);
+		CreateEmptyEntities(count, i => {
+			archetypes.AddEntity(i, archetype);
+			uint offset = archetype.GetComponentIdFromEntity(i);
 			onEntityCreation(c1 + offset, c2 + offset, c3 + offset, c4 + offset, c5 + offset, c6 + offset, c7 + offset, c8 + offset);
 		});
 	}

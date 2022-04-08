@@ -1,4 +1,5 @@
 #include "SortedIntIntList.h"
+#include <iostream>
 
 int SortedIntIntList::binarySearch(const uint32_t key) const {
     int size = (int) elements.size();
@@ -34,16 +35,17 @@ void SortedIntIntList::remove(uint32_t key) {
 
 void SortedIntIntList::set(IntInt element) {
     size_t size = elements.size();
-    if (size == 0 || elements[size - 1].key <= element.key) {
+    if (size == 0 || elements[size - 1].key < element.key) {
         elements.push_back(element);
         return;
     }
-    if (elements[0].key >= element.key) {
+    if (elements[0].key > element.key) {
         insert(0, element);
         return;
     }
     int index = binarySearch(element.key);
-    insert(index, element);
+    if (elements[index].key == element.key) elements[index].val = element.val;
+    else insert(index, element);
 }
 
 void SortedIntIntList::removeAt(const int index) {

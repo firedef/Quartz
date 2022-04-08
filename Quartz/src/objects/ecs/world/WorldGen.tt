@@ -85,10 +85,9 @@ public partial class World {
         archetype.PreAllocate(count);
        
         <#= string.Join("\n" + Indent("", 2), genericIndices.Select(v => $"T{v}* c{v} = (T{v}*) archetype.GetComponent(archetype.IndexOfComponent(typeof(T{v}).ToEcsComponent()), 0);"))#>
-        entities.AddMultiple(count, i => {
-			EntityId ent = i;
-			archetypes.AddEntity(ent, archetype);
-			uint offset = archetype.GetComponentIdFromEntity(ent);
+        CreateEmptyEntities(count, i => {
+			archetypes.AddEntity(i, archetype);
+			uint offset = archetype.GetComponentIdFromEntity(i);
 			onEntityCreation(<#= string.Join(", ", genericIndices.Select(v => $"c{v} + offset"))#>);
 		});
     }
