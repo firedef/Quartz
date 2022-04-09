@@ -14,7 +14,7 @@ public class EntityRendererSystem : EntitySystem, IAutoEntitySystem {
 	public bool repeating => true;
 	public bool continueInvoke => true;
 	public float lifetime => float.MaxValue;
-	public bool invokeWhileInactive => false;
+	public bool invokeWhileInactive => true;
 
 	protected override unsafe void Run() {
 		Camera.main!.UpdateTransform();
@@ -35,6 +35,6 @@ public class EntityRendererSystem : EntitySystem, IAutoEntitySystem {
 				GL.UniformMatrix4fv(0, 1, 1, (float*) &matrix);
 				GL.DrawElements(mesh.topology, mesh.indices.count, DrawElementsType.UnsignedShort, 0);
 			});
-		});
+		},false);
 	}
 }

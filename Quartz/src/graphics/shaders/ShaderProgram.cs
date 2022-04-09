@@ -81,6 +81,11 @@ public struct ShaderProgram {
 		return GL.GetAttribLocation(programHandle, name);
 	}
 	
+	public int UniformLocation(string name) {
+		if (!isGenerated) Compile();
+		return GL.GetUniformLocation(programHandle, name);
+	}
+	
 	public void ProcessAttribute(string name, int size, VertexAttribPointerType type, bool normalized, int stride, int offset) {
 		if (!isGenerated) Compile();
 		uint loc = (uint) GL.GetAttribLocation(programHandle, name);

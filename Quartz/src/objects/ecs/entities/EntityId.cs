@@ -24,5 +24,5 @@ public readonly struct EntityId {
 	public static bool operator ==(EntityId a, EntityId b) => a.id == b.id; 
 	public static bool operator !=(EntityId a, EntityId b) => a.id != b.id; 
 	
-	public override string ToString() => isValid ? $"#{id:X}" : "null";
+	public override string ToString() => isValid ? id.ToString() : "null";
 }

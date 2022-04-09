@@ -1,12 +1,22 @@
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL.Compatibility;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using Quartz.debug.log;
 using Quartz.graphics.shaders;
+using ErrorCode = OpenTK.Graphics.OpenGL.Compatibility.ErrorCode;
 
 namespace Quartz.utils; 
 
 public static class OpenGl {
+	public static Version glVersion;
 	public static ShaderProgram boundShaderProgram = ShaderProgram.empty;
+
+	public static bool supportNamedBuffers => true || glVersion >= new Version(4, 5);
+
+	static OpenGl() {
+		GLFW.GetVersion(out int major, out int minor, out int revision);
+		glVersion = new(major, minor, revision);
+	}
 	
 	public static void BindShader(ref ShaderProgram v) {
 		if (!v.isGenerated) v.Compile();

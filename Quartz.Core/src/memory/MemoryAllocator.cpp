@@ -215,43 +215,46 @@ void MemoryAllocator::cleanup() {
 }
 
 void MemoryAllocator::free(uint8_t *ptr) {
+    currentAllocated -= allocations[ptr];
+    allocations.erase(ptr);
     std::free(ptr);
 //    return freeItem(ptr);
 }
 
 uint8_t* MemoryAllocator::allocate(uint32_t sizeBytes) {
+    addAllocStats((int)sizeBytes);
     uint8_t* ptr = (uint8_t*) malloc(sizeBytes);
+    allocations[ptr] = sizeBytes;
     return ptr;
 //    return allocItem(sizeBytes);
 }
 
 uint8_t* MemoryAllocator::resize(uint8_t* ptr, uint32_t newSize) {
-    //uint8_t* nPtr = allocate(newSize);
-    //memcpy(nPtr, ptr, std::min(newSize, _adfs_allocations[ptr]));
-    //free(ptr);
-    //return nPtr;
+    uint32_t oldSize = allocations[ptr];
+    addAllocStats((int)newSize - (int) oldSize);
+    allocations[ptr] = newSize;
     return (uint8_t*) std::realloc(ptr, newSize);
-    [[unlikely]] if (ptr == nullptr) return nullptr;
-    
-    uint32_t oldSize = -1;
-    for (int i = 0; i < bucketCount; ++i) {
-        if (!buckets[i]->bucketAllocation.contains(ptr)) continue;
-        
-        oldSize = buckets[i]->allocations[ptr];
-        if (!buckets[i]->tryResize(ptr, newSize)) break;
-        addAllocStats((int)newSize - (int)oldSize);
-        return ptr; 
-    }
-
-    [[unlikely]] if (oldSize == -1) return nullptr;
-    
-    uint8_t* newPtr = allocate(newSize);
-    std::memcpy(newPtr, ptr, std::min(newSize, oldSize));
-    freeItem(ptr);
-
-    addAllocStats((int)newSize - (int)oldSize);
-    
-    return newPtr;
+//    [[unlikely]] if (ptr == nullptr) return nullptr;
+//    
+//    uint32_t oldSize = -1;
+//    for (int i = 0; i < bucketCount; ++i) {
+//        if (!buckets[i]->bucketAllocation.contains(ptr)) continue;
+//        
+//        oldSize = buckets[i]->allocations[ptr];
+//        if (!buckets[i]->tryResize(ptr, newSize)) break;
+//        addAllocStats((int)newSize - (int)oldSize);
+//        return ptr; 
+//    }
+//
+//    [[unlikely]] if (oldSize == -1) return nullptr;
+//    
+//    uint8_t* newPtr = allocate(newSize);
+//    std::memcpy(newPtr, ptr, std::min(newSize, oldSize));
+//    freeItem(ptr);
+//
+//    addAllocStats((int)newSize - (int)oldSize);
+//    
+//    return newPtr;
 }
 
 uint8_t* MemoryAllocator::resizeGlobal(uint8_t* ptr, uint32_t newSize) {

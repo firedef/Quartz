@@ -21,10 +21,10 @@ public partial class World {
 	public bool isAlive { get; private set; } = true;
 
 	/// <summary>true, is world is participate in events</summary>
-	public bool isActive { get; private set; } = true;
+	public bool isActive = true;
 	
 	/// <summary>true, is world is renderable</summary>
-	public bool isVisible { get; private set; } = true;
+	public bool isVisible = true;
 
 	/// <summary>current alive entity count of this world</summary>
 	public int currentEntityCount { get; private set; }
@@ -93,6 +93,8 @@ public partial class World {
 
 	/// <summary>get archetype of alive entity, or return null if entity does not have any components</summary>
 	public Archetype? GetEntityArchetype(EntityId entity) => archetypes.TryGetArchetype(entity);
+	
+	public Archetype GetArchetypeById(int id) => archetypes.archetypes[id];
 	
 #endregion archetypes
 

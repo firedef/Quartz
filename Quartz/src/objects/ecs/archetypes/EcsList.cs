@@ -26,6 +26,7 @@ public abstract class EcsList {
 	public abstract int elementSize { get; }
 	public abstract void PreAllocate(int elementCount);
 	public abstract int freeSpace { get; }
+	public abstract string ToStringElement(int i);
 }
 
 public unsafe class EcsList<T> : EcsList where T : unmanaged {
@@ -55,4 +56,6 @@ public unsafe class EcsList<T> : EcsList where T : unmanaged {
 	}
 
 	public override void PreAllocate(int elementCount) => collection.EnsureFreeSpace(elementCount);
+
+	public override unsafe string ToStringElement(int i) => data[i].ToString()!;
 }

@@ -44,6 +44,10 @@ public static partial class EventManager {
 	public static void OnRender() {
 		if (!isFirstUpdate) Dispatcher.global.Call(EventTypes.render);
 	}
+	
+	public static void OnImGui() {
+		Dispatcher.global.Call(EventTypes.imgui);
+	}
 
 	public static void OnStart() {
 		Dispatcher.global.Call(EventTypes.start);

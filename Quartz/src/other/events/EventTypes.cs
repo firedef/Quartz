@@ -24,7 +24,8 @@ public enum EventTypes : uint {
 
 	/// <summary>called on low memory</summary>
 	lowMemory = 1 << 6,
-	//reserved = 1 << 7,
+	
+	imgui = 1 << 7,
 
 	/// <summary>not implemented <br/><br/>called on scene loading</summary>
 	sceneEnter = 1 << 8,

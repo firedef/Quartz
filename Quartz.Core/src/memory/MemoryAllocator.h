@@ -58,6 +58,7 @@ public:
 class MemoryAllocator {
 public:
     static MemoryAllocator* instance;
+    std::unordered_map<uint8_t*, uint32_t> allocations;
     
     uint32_t bucketCount{};
     uint64_t currentAllocated{};

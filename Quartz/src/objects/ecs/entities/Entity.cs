@@ -22,6 +22,8 @@ public struct Entity {
 
 	public static implicit operator EntityId(Entity v) => v.id;
 	public static implicit operator uint(Entity v) => v.id.id;
+
+	public override string ToString() => $"{id}:{version}";
 }
 
 [Flags]

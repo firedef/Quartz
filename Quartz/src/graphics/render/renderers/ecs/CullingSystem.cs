@@ -15,9 +15,9 @@ public class CullingSystem : EntitySystem {
 				aabb->value = new(pos->value.x, pos->value.y, 1, 1);
 			});
 		
-			world.Foreach<AabbComponent, RendererComponent>((aabb, renderer) => {
-				renderer->enabled = aabb->value.Contains(cameraAabb);
-			});
+			// world.Foreach<AabbComponent, RendererComponent>((aabb, renderer) => {
+			// 	renderer->enabled = aabb->value.Contains(cameraAabb);
+			// });
 		});
 		
 		this.DispatchExecution(10, mainThread: false);

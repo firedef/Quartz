@@ -1,6 +1,7 @@
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL.Compatibility;
 using Quartz.debug.log;
+using Quartz.utils;
 
 namespace Quartz.collections.buffers; 
 
@@ -32,8 +33,31 @@ public struct VBO : IDisposable {
 		//Log.Minimal($"bound VBO {handle}");
 	}
 
+	public unsafe void Alloc(int size, BufferUsageARB usage = BufferUsageARB.DynamicDraw) => BufferData(size, null, usage);
+	
+	public unsafe void BufferData(int size, void* ptr, BufferUsageARB usage = BufferUsageARB.DynamicDraw) {
+		if (OpenGl.supportNamedBuffers) {
+			GL.NamedBufferData((BufferHandle)(int)handle, size, ptr, (VertexBufferObjectUsage) usage);
+			return;
+		}
+		
+		Bind();
+		GL.BufferData(target, size, ptr, usage);
+	}
+	
+	public unsafe void BufferSubData(int offset, int size, void* ptr) {
+		if (OpenGl.supportNamedBuffers) {
+			GL.NamedBufferSubData((BufferHandle)(int)handle, (IntPtr)offset, size, ptr);
+			return;
+		}
+		
+		Bind();
+		GL.BufferSubData(target, (IntPtr)offset, size, ptr);
+	}
+
 	public static VBO Generate() {
-		VBO buffer = GL.GenBuffer();
+		VBO buffer = GL.CreateBuffer();
+		// VBO buffer = GL.GenBuffer();
 		Log.Note($"generate VBO {buffer.handle}");
 		return buffer;
 	}
