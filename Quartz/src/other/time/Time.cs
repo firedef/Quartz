@@ -11,6 +11,9 @@ public static class Time {
 
 	public static float frameDeltaTime;
 	public static float fixedDeltaTime;
+
+	public static float frameTime;
+	public static float fixedTime;
 	
 	public static float gameSpeed = 1f;
 

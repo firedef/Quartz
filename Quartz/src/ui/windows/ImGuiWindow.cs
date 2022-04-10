@@ -1,6 +1,7 @@
 using System.Reflection;
 using ImGuiNET;
 using OpenTK.Windowing.Common;
+using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
 using Quartz.other.events;
 using Quartz.ui.imgui.windows;
@@ -10,7 +11,9 @@ namespace Quartz.ui.windows;
 public abstract class ImGuiWindow : GameWindow {
 	private ImGuiController _controller = null!;
 
-	public ImGuiWindow(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings) : base(gameWindowSettings, nativeWindowSettings) { }
+	public ImGuiWindow(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings) : base(gameWindowSettings, nativeWindowSettings) {
+		
+	}
 	
 	protected override void OnLoad() {
 		//typeof(GameWindow).GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public).First(v => v.Name == "_updateFrequency").SetValue(this, 5000);
@@ -34,6 +37,7 @@ public abstract class ImGuiWindow : GameWindow {
 
 	private void Layout() {
 		if (ImGui.Button("open stats window")) StatsWindow.OpenWindow();
+		if (ImGui.Button("open profiler window")) ProfilerWindow.OpenWindow();
 		if (ImGui.Button("open ecs window")) WorldWindow.OpenWindow();
 		
 		EventManager.OnImGui();

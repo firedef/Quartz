@@ -1,5 +1,6 @@
 using Quartz.objects.ecs.components;
 using Quartz.objects.ecs.entities;
+using Quartz.objects.ecs.world;
 
 namespace Quartz.objects.ecs.archetypes; 
 
@@ -11,12 +12,13 @@ public class Archetype {
 	public readonly EcsChunk components;
 	public readonly ArchetypeRoot root;
 	public readonly uint id;
+	public readonly World owner;
 
 #endregion fields
 
 #region init
 
-	public Archetype(ComponentType[] componentTypes, ArchetypeRoot root, uint id) {
+	public Archetype(ComponentType[] componentTypes, ArchetypeRoot root, uint id, World owner) {
 		this.componentTypes = componentTypes;
 		EcsList[] c = new EcsList[componentTypes.Length];
 		for (int i = 0; i < componentTypes.Length; i++)
@@ -25,6 +27,7 @@ public class Archetype {
 		components = new(c);
 		this.root = root;
 		this.id = id;
+		this.owner = owner;
 	}
 
 #endregion init

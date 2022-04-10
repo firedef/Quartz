@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using MathStuff;
 using Quartz.collections;
 using Quartz.core;
 using Quartz.objects.ecs.components;
@@ -87,11 +87,11 @@ public class EcsChunk {
 	
 #region iteration
 
-	public unsafe void Foreach<T0>(EcsDelegates.ComponentDelegate<T0> a, int i0) where T0 : unmanaged, IComponent {
-		int c = components[i0].count;
+	public unsafe void Foreach<T0>(EcsDelegates.ComponentDelegate<T0> a, int i0, int skip = 0, int skipEnd = 0, int take = int.MaxValue) where T0 : unmanaged, IComponent {
+		int c = math.min(components[i0].count - skipEnd, take + skip);
 		T0* ptr0 = (T0*) components[i0].rawData;
 
-		for (int i = 0; i < c; i++) a(ptr0 + i);
+		for (int i = skip; i < c; i++) a(ptr0 + i);
 	}
 	
 	public unsafe void Foreach<T0, T1>(EcsDelegates.ComponentDelegate<T0, T1> a, int i0, int i1) 

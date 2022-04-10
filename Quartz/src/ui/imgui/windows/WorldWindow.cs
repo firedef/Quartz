@@ -16,7 +16,7 @@ public class WorldWindow : EditorWindow {
 		
 	}
 	protected override void OnClose() {
-		
+		global = null;
 	}
 	protected override void Layout() {
 		ImGui.LabelText($"{World.worldCount}", "world count:");

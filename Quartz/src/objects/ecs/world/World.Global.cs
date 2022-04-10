@@ -1,5 +1,7 @@
+using Quartz.objects.ecs.components;
 using Quartz.objects.ecs.entities;
 using Quartz.objects.ecs.managed;
+using Quartz.objects.ecs.queries;
 using Quartz.objects.memory;
 
 namespace Quartz.objects.ecs.world;
@@ -47,6 +49,8 @@ public partial class World {
 		world.SetVisible(false);
 		return world;
 	}
+
+	public static Query<T0> Select<T0>() where T0 : unmanaged, IComponent => new(); 
 
 #endregion world
 

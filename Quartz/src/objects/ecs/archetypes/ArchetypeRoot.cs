@@ -1,6 +1,7 @@
 using Quartz.core.collections;
 using Quartz.objects.ecs.components;
 using Quartz.objects.ecs.entities;
+using Quartz.objects.ecs.world;
 
 namespace Quartz.objects.ecs.archetypes; 
 
@@ -9,6 +10,7 @@ public partial class ArchetypeRoot {
 
 	private readonly List<Archetype> _archetypes = new();
 	private readonly IntMap _entityArchetypeIdMap = new();
+	public readonly World owner;
 
 	public IReadOnlyList<Archetype> archetypes => _archetypes;
 
@@ -18,8 +20,10 @@ public partial class ArchetypeRoot {
 
 #region archetypes
 
+	public ArchetypeRoot(World owner) => this.owner = owner;
+
 	private Archetype AddArchetype(ComponentType[] types) {
-		Archetype arch = new(types, this, (uint)(_archetypes.Count));
+		Archetype arch = new(types, this, (uint)(_archetypes.Count), owner);
 		_archetypes.Add(arch);
 		return arch;
 	}

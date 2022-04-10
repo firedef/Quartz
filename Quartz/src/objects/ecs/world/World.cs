@@ -34,7 +34,7 @@ public partial class World {
 
 	public string worldName = "unnamed";
 
-	private readonly ArchetypeRoot archetypes = new();
+	public readonly ArchetypeRoot archetypes;
 	
 #endregion fields
 
@@ -55,7 +55,10 @@ public partial class World {
 
 #region world
 
-	private World(WorldId worldId) => this.worldId = worldId;
+	private World(WorldId worldId) {
+		this.worldId = worldId;
+		archetypes = new(this);
+	}
 
 	/// <summary>set world active state, to process events or not</summary>
 	public void SetActive(bool v) => isActive = v;
@@ -346,4 +349,11 @@ public partial class World {
 	public void Unlock() => Monitor.Exit(_currentLock);
 
 #endregion other
+
+#region operators
+
+	public static bool operator ==(World a, World b) => a.worldId.id == b.worldId.id;
+	public static bool operator !=(World a, World b) => a.worldId.id != b.worldId.id;
+
+#endregion operators
 }

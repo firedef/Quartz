@@ -102,16 +102,18 @@ public static class EcsSerialize {
 			if ((i - _limEntitiesStart) % columnCount == 0) ImGui.TableNextRow();
 			ImGui.TableNextColumn();
 			
-			Archetype? archetype = world.GetEntityArchetype(entity);
-			StringBuilder info = new(64);
-			info.AppendLine($"id: {entity.id.id}");
-			info.AppendLine($"version: {entity.version}");
-			info.AppendLine($"world: {world.worldName}");
-			if (archetype == null) info.AppendLine("archetype: null");
-			else info.AppendLine($"archetype: {archetype.id}");
-
-			bool btn = ImGui.Button($"{entity}".PadRight(24));
-			ImGuiElements.Tooltip(info.ToString());
+			bool btn = ImGui.Button(entity.id.id.ToString().PadRight(24));
+			if (ImGuiElements.BeginTooltip()) {
+				Archetype? archetype = world.GetEntityArchetype(entity);
+				StringBuilder info = new(64);
+				info.AppendLine($"id: {entity.id.id}");
+				info.AppendLine($"version: {entity.version}");
+				info.AppendLine($"world: {world.worldName}");
+				if (archetype == null) info.AppendLine("archetype: null");
+				else info.AppendLine($"archetype: {archetype.id}");
+				ImGui.Text(info.ToString());
+				ImGuiElements.EndTooltip();
+			}
 
 			if (btn) EntityWindow.OpenNew(entity.id, isReadonly);
 		}

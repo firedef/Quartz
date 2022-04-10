@@ -2,6 +2,7 @@ using OpenTK.Mathematics;
 using Quartz.objects.ecs.filters;
 using Quartz.objects.ecs.systems;
 using Quartz.objects.ecs.world;
+using Quartz.other.events;
 using Quartz.utils;
 
 namespace Quartz.graphics.render.renderers.ecs; 
@@ -25,11 +26,9 @@ public class MatrixConstructionSystem : EntitySystem {
 				matrixComp->value = matrixComp->value.SetScale(comp->value);
 			});
 		});
-		
-		this.DispatchExecution(0, 0, mainThread:false);
 	}
 	
 	
 	[ExecuteOnce]
-	private static void Invoke() => new MatrixConstructionSystem().Execute();
+	private static void Invoke() => Dispatcher.global.PushMultipleRepeating(new MatrixConstructionSystem().Execute, EventTypes.render);
 }

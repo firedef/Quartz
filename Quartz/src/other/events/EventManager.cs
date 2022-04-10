@@ -1,4 +1,4 @@
-using Quartz.objects.memory;
+using System.Diagnostics;
 using Quartz.other.time;
 
 namespace Quartz.other.events; 
@@ -14,6 +14,9 @@ public static partial class EventManager {
 	
 	public static int rareUpdatesPerMin { get => (int)(60f / rareUpdateRate); set => rareUpdateRate = 60f / value; }
 	public static float rareUpdateRate = 1f;
+	
+	public static int fps { get => (int)(1f / renderRate); set => renderRate = 1f / value; }
+	public static float renderRate = 1f / 60;
 
 	private static double lastFrameUpdateTime;
 	private static double lastFixedUpdateTime;
@@ -22,14 +25,14 @@ public static partial class EventManager {
 
 	public static void Update() {
 		double currentTime = Time.secondsRealTime;
-		float frameDeltaTime = (float)(currentTime - lastFrameUpdateTime);
-		lastFrameUpdateTime = currentTime;
-		if (!isFirstUpdate) OnFrameUpdate(frameDeltaTime);
 		
 		float fixedDeltaTime = (float)(currentTime - lastFixedUpdateTime);
 		if (fixedDeltaTime >= fixedUpdateRate) {
+			Stopwatch sw = Stopwatch.StartNew();
 			lastFixedUpdateTime = currentTime;
 			if (!isFirstUpdate) OnFixedUpdate(fixedDeltaTime);
+			
+			Time.fixedTime = (float) (sw.ElapsedTicks / (double)Stopwatch.Frequency);
 		}
 		
 		float rareDeltaTime = (float)(currentTime - lastRareUpdateTime);
@@ -42,7 +45,15 @@ public static partial class EventManager {
 	}
 	
 	public static void OnRender() {
-		if (!isFirstUpdate) Dispatcher.global.Call(EventTypes.render);
+		Stopwatch sw = Stopwatch.StartNew();
+		if (!isFirstUpdate) {
+			double currentTime = Time.secondsRealTime;
+			float frameDeltaTime = (float)(currentTime - lastFrameUpdateTime);
+			lastFrameUpdateTime = currentTime;
+			Dispatcher.global.Call(EventTypes.render);
+			OnFrameUpdate(frameDeltaTime);
+		}
+		Time.frameTime = (float) (sw.ElapsedTicks / (double)Stopwatch.Frequency);
 	}
 	
 	public static void OnImGui() {
