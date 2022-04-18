@@ -1,6 +1,7 @@
 using MathStuff;
 using Quartz.collections;
-using Quartz.core;
+using Quartz.CoreCs.collections;
+using Quartz.CoreCs.native;
 using Quartz.objects.ecs.components;
 using Quartz.objects.ecs.delegates;
 using Quartz.objects.ecs.entities;

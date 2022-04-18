@@ -7,8 +7,8 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Quartz.collections.buffers;
+using Quartz.CoreCs.other.time;
 using Quartz.graphics.shaders;
-using Quartz.other.time;
 using Vector4 = System.Numerics.Vector4;
 
 namespace Quartz.ui.windows; 

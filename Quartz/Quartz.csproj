@@ -17,6 +17,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Quartz.Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Include="ImGui.NET" Version="1.87.3" />
       <PackageReference Include="MathStuff" Version="1.0.0" />
       <PackageReference Include="OpenTK" Version="5.0.0-pre.6" />
@@ -26,9 +32,6 @@
 
     <ItemGroup>
       <None Remove="libs\libQuartz_Core.so" />
-      <Content Include="libs\libQuartz_Core.so">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
       <None Update="src\objects\ecs\world\WorldGen.tt">
         <Generator>TextTemplatingFileGenerator</Generator>
         <LastGenOutput>WorldGen.cs</LastGenOutput>
@@ -41,6 +44,7 @@
         <Generator>TextTemplatingFileGenerator</Generator>
         <LastGenOutput>ArchetypeGen.cs</LastGenOutput>
       </None>
+      <None Remove="src\objects\ecs\**" />
     </ItemGroup>
 
     <ItemGroup>
@@ -59,10 +63,20 @@
         <DesignTime>True</DesignTime>
         <DependentUpon>ArchetypeGen.tt</DependentUpon>
       </Compile>
+      <Compile Remove="src\objects\ecs\**" />
     </ItemGroup>
 
-    <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-      <Exec Command="$(ProjectDir)/build.sh" />
-    </Target>
+    <ItemGroup>
+      <ProjectReference Include="..\Quartz.CoreCs\Quartz.CoreCs.csproj" />
+      <ProjectReference Include="..\Quartz.Ecs\Quartz.Ecs.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="src\core" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="src\objects\ecs\**" />
+    </ItemGroup>
 
 </Project>

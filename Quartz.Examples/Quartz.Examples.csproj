@@ -10,19 +10,27 @@
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
       <PlatformTarget>x64</PlatformTarget>
+      <DebugType>pdbonly</DebugType>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
       <PlatformTarget>x64</PlatformTarget>
+      <DebugSymbols>true</DebugSymbols>
+      <DebugType>pdbonly</DebugType>
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Quartz.Ecs\Quartz.Ecs.csproj" />
       <ProjectReference Include="..\Quartz\Quartz.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="YamlDotNet" Version="11.2.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="src" />
     </ItemGroup>
 
 </Project>

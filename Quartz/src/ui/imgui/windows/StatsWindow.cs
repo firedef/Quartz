@@ -1,9 +1,8 @@
-using System.Buffers;
 using ImGuiNET;
-using Quartz.collections;
-using Quartz.objects.memory;
-using Quartz.other;
-using Quartz.other.time;
+using Quartz.CoreCs.collections;
+using Quartz.CoreCs.memory;
+using Quartz.CoreCs.other;
+using Quartz.CoreCs.other.time;
 
 namespace Quartz.ui.imgui.windows; 
 

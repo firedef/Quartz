@@ -1,5 +1,5 @@
 using ImGuiNET;
-using Quartz.objects.ecs.entities;
+using Quartz.Ecs.ecs.identifiers;
 
 namespace Quartz.ui.imgui.windows; 
 
@@ -9,7 +9,7 @@ public class EntityWindow : EditorWindow {
 
 	public EntityWindow() => Open();
 	
-	public override string GetWindowName() => $"entity {selectedEntity}";
+	public override string GetWindowName() => $"entity {selectedEntity.position}";
 	
 	protected override void OnOpen() {
 	}

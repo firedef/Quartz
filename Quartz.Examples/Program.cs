@@ -13,7 +13,6 @@ public class Program {
 		
 		GameWindowSettings winSettings = GameWindowSettings.Default;
 		winSettings.IsMultiThreaded = true;
-		//winSettings.UpdateFrequency = 20;
 		
 		QuartzWindow win = new(winSettings, settings);
 		win.Run();

@@ -1,8 +1,7 @@
 using MathStuff;
 using OpenTK.Graphics.OpenGL.Compatibility;
 using Quartz.collections;
-using Quartz.objects.memory;
-using Quartz.other;
+using Quartz.CoreCs.collections;
 
 namespace Quartz.objects.mesh; 
 

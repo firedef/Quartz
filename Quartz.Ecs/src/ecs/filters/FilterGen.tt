@@ -1,0 +1,88 @@
+<#@ template language="C#v3.5" #>
+<#@ assembly name="System.Core"#>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+using Quartz.Ecs.ecs.archetypes;
+using Quartz.Ecs.ecs.components;
+using Quartz.Ecs.ecs.identifiers;
+
+namespace Quartz.Ecs.ecs.filters;
+
+<#
+    const int genericCountMax = 8;
+    string[] types = {"All", "Any", "None", "And", "Or", "Not"};
+    (int min, int max)[] genericCountRanges = {(1,genericCountMax), (1,genericCountMax), (1,genericCountMax), (2,genericCountMax), (2,genericCountMax), (1,1)};
+
+    for (int i = 0; i < types.Length; i++) {
+        string filterName = types[i];
+        for (int genericCount = genericCountRanges[i].min; genericCount <= genericCountRanges[i].max; genericCount++) {
+            int[] genericIndices = Enumerable.Range(1, genericCount).ToArray();
+            string generics = string.Join(", ", genericIndices.Select(v => $"T{v}"));
+            string typeName = $"{filterName}<{generics}>";
+#>
+
+public readonly struct <#=typeName#> : IEcsFilter
+    <#= GetGenericWhere(1, GetGenericConstrains())#> 
+{
+<#
+            if (filterName is "All" or "Any" or "None") {
+#>
+    <#= string.Join("\n\t",genericIndices.Select(v => $"private static readonly ComponentType _t{v} = typeof(T{v}).Get();"))#>
+
+<#
+            }
+#>
+    public bool Filter(Archetype archetype) { <#= filterName switch {
+    "All" => GenAllFilter(),
+    "Any" => GenAnyFilter(),
+    "None" => GenNoneFilter(),
+    "And" => GenAndFilter(),
+    "Or" => GenOrFilter(),
+    "Not" => GenNotFilter(),
+    _ => "", }#>
+    }
+}
+<#
+
+            string GetGenericWhere(int indent, params string[] where) => string.Join("\n" + Indent("", indent), genericIndices.Select(v => $"where T{v} : {string.Join(", ", where)}"));
+
+            string[] GetGenericConstrains() {
+                switch (filterName) {
+                    case "All":
+                    case "Any":
+                    case "None": return new[] {"unmanaged", "IEcsData"};
+                    case "And":
+                    case "Or":
+                    case "Not": return new[] {"IEcsFilter", "new()"};
+                    default:return Array.Empty<string>();
+                }
+            }
+            
+            string GenAllFilter() => $@"
+        if (archetype.componentCount < {genericCount}) return false;
+        {string.Join("\n" + Indent("",2), genericIndices.Select(v => $"if (!archetype.ContainsComponent(_t{v})) return false;"))}
+        return true;";
+            
+            string GenAnyFilter() => $@"
+        {string.Join("\n" + Indent("",2), genericIndices.Select(v => $"if (archetype.ContainsComponent(_t{v})) return true;"))}
+        return false;";
+            
+            string GenNoneFilter() => $@"
+        {string.Join("\n" + Indent("",2), genericIndices.Select(v => $"if (archetype.ContainsComponent(_t{v})) return false;"))}
+        return true;";
+            
+            string GenAndFilter() => $@"
+        return {string.Join(" && ", genericIndices.Select(v => $"new T{v}().Filter(archetype)"))};";
+            
+            string GenOrFilter() => $@"
+        return {string.Join(" || ", genericIndices.Select(v => $"new T{v}().Filter(archetype)"))};";
+            
+            string GenNotFilter() => $@"
+        return !new T1().Filter(archetype);";
+        }
+    }
+
+    string Indent(string s, int l) => new string(' ', l * 4) + s;
+#>

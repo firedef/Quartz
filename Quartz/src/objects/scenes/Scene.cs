@@ -1,4 +1,4 @@
-using Quartz.objects.ecs.world;
+using Quartz.Ecs.ecs.worlds;
 
 namespace Quartz.objects.scenes; 
 
@@ -12,6 +12,6 @@ public class Scene {
 	}
 
 	public void Destroy() {
-		world.Destroy();
+		world.DestroyWorld();
 	}
 }

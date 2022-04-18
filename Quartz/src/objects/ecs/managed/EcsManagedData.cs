@@ -1,3 +1,5 @@
+using Quartz.CoreCs.collections;
+
 namespace Quartz.objects.ecs.managed; 
 
 public static class EcsManagedData<T> {

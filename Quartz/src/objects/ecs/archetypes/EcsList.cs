@@ -1,4 +1,4 @@
-using Quartz.objects.memory;
+using Quartz.CoreCs.collections;
 
 namespace Quartz.objects.ecs.archetypes;
 
@@ -42,6 +42,8 @@ public unsafe class EcsList<T> : EcsList where T : unmanaged {
 		collection.EnsureFreeSpace(1);
 		count++;
 	}
+
+	public void Add(T v) => collection.Add(v);
 
 	public override void AddFrom(void* src) {
 		collection.EnsureFreeSpace(1);

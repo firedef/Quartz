@@ -1,5 +1,5 @@
 using ImGuiNET;
-using Quartz.other.events;
+using Quartz.CoreCs.other.events;
 
 namespace Quartz.ui.imgui.windows; 
 

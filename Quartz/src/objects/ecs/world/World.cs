@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
-using Quartz.core;
+using Quartz.CoreCs.memory;
+using Quartz.CoreCs.native;
 using Quartz.objects.ecs.archetypes;
 using Quartz.objects.ecs.components;
 using Quartz.objects.ecs.entities;

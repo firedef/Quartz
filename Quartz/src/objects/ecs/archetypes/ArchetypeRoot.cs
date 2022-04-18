@@ -1,4 +1,4 @@
-using Quartz.core.collections;
+using Quartz.CoreCs.native.collections;
 using Quartz.objects.ecs.components;
 using Quartz.objects.ecs.entities;
 using Quartz.objects.ecs.world;

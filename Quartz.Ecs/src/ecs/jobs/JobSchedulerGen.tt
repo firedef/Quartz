@@ -1,0 +1,120 @@
+<#@ template language="C#v3.5" #>
+<#@ assembly name="System.Core"#>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+using MathStuff;
+using Quartz.CoreCs.other.events;
+using Quartz.Ecs.ecs.archetypes;
+using Quartz.Ecs.ecs.components;
+using Quartz.Ecs.ecs.queries;
+using Quartz.Ecs.ecs.views;
+using Quartz.Ecs.ecs.worlds;
+
+namespace Quartz.Ecs.ecs.jobs; 
+
+public static partial class JobScheduler {
+<#
+    const int normalCount = 4;
+    const int sharedCount = 2;
+
+    for (int nI = 0; nI <= normalCount; nI++) {
+        for (int sI = 0; sI <= sharedCount; sI++) {
+            if (nI == 0 && sI == 0) continue;
+            int[] normalGenerics = Enumerable.Range(0, nI).ToArray();
+            int[] sharedGenerics = Enumerable.Range(0, sI).ToArray();
+            int[] generics = Enumerable.Range(0, nI + sI).ToArray();
+            string genericsStr = $"<{string.Join(", ", generics.Select(v => $"T{v}"))}>";
+            string nameAddS = sI > 0 ? $"S{sI}" : "";
+#>
+	/// <summary>
+	/// execute job using specified dispatch settings <br/><br/><#=nI#> normal components and <#=sI#> shared
+	/// </summary>
+	/// <param name="a">action to execute</param>
+	/// <param name="settings">dispatch settings</param>
+	/// <param name="query">specified archetype query, or automatic from dispatch settings, if null</param>
+	public static unsafe void Schedule<#=nameAddS#><#=genericsStr#>(this Action<ComponentsView<#=nameAddS#><#=genericsStr#>, JobState> a, JobScheduleSettings settings, Query? query = null) <#= GetGenerics()#> {
+		// lock world
+		World.Lock();
+
+		// create query
+		query ??= World.SelectStatic<#=genericsStr#>().Worlds(settings.interactableWorlds, settings.activeWorlds, settings.visibleWorlds);
+
+		// run query
+		QueryResult result = query.Result();
+
+		// create job states
+		int jobsCount = settings.multithreaded 
+			? result.archetypes.Sum(archetype => (int) MathF.Ceiling(math.min((float) archetype.entityCount / settings.minChunkSize, settings.maxThreadCount)))
+			: result.archetypes.Count;
+		JobState?[] states = new JobState?[jobsCount];
+
+		// dispatch
+		int jobIndex = 0;
+		foreach (Archetype archetype in result.archetypes) {
+			// get view
+			ComponentsView<#=nameAddS#><#=genericsStr#> view = archetype.Components<#=nameAddS#><#=genericsStr#>();
+			int sizeAdd = settings.multithreaded 
+				? math.max(settings.minChunkSize, archetype.entityCount / settings.maxThreadCount)
+				: int.MaxValue;
+
+			// slice view
+			for (int i = 0; i < view.count; i += sizeAdd) {
+				// add job state
+				states[jobIndex] = new(jobIndex, jobsCount - 1);
+				jobIndex++;
+
+				// cache variables for delegate
+				int sliceStart = i;
+				int currentJobIndex = jobIndex - 1;
+
+				// execute by now
+				if (settings.executeNow) {
+					Run_(archetype, view, sliceStart, sizeAdd, states[currentJobIndex]);
+					continue;
+				}
+
+				// dispatch for later execution
+				FixedUpdatePipeline.EnqueueWithDelay(
+					() => Run_(archetype, view, sliceStart, sizeAdd, states[currentJobIndex]), 
+					null, 
+					settings.tickDelay, 
+					settings.loadBalancingTicks, 
+					!settings.multithreaded, 
+					waitForComplete: settings.waitForComplete);
+			}
+		}
+
+		// unlock world
+		World.Unlock();
+
+		// execute job method
+		void Run_(Archetype archetype, ComponentsView<#=nameAddS#><#=genericsStr#> view, int sliceStart, int size, JobState jobState) {
+			// update variables
+			int entityCount = archetype.entityCount;
+			int start = math.min(sliceStart, entityCount);
+			int count = math.clamp(entityCount - sliceStart, 0, size);
+
+			// get components with offsets
+			<#=string.Join("\n\t\t\t", generics.Select(v => (v < nI ? $"T{v}*" : $"ushort*") + $" c{v} = view.component{v} + start;"))#>
+
+			// create new view
+			ComponentsView<#=nameAddS#><#=genericsStr#> slice = new(archetype, <#=string.Join(", ", generics.Select(v => $"c{v}"))#>, count);
+
+			// run job
+			a(slice, jobState);
+
+			// mark job as done
+			for (int i = 0; i < jobsCount; i++) states[i]?.IncrementCompletedIterations();
+		}
+	}
+
+<#
+            string GetGenerics() => GetNormalGenerics() + GetSharedGenerics();
+            string GetNormalGenerics() => string.Join("", normalGenerics.Select(v => $"\n\t\twhere T{v} : unmanaged, IComponent"));
+            string GetSharedGenerics() => string.Join("", sharedGenerics.Select(v => $"\n\t\twhere T{v + nI} : unmanaged, ISharedComponent"));
+        }
+    }
+#>
+}

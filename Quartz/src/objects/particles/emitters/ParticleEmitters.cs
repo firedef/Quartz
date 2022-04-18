@@ -1,6 +1,5 @@
-using MathStuff;
 using MathStuff.vectors;
-using Quartz.other;
+using Quartz.CoreCs.other;
 
 namespace Quartz.objects.particles.emitters;
 

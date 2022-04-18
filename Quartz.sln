@@ -6,6 +6,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quartz.Examples", "Quartz.E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quartz.Tests", "Quartz.Tests\Quartz.Tests.csproj", "{32603830-0881-4326-9E7A-B4F8D028810D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quartz.Ecs", "Quartz.Ecs\Quartz.Ecs.csproj", "{C2109CF4-A7D3-402E-84A4-FA3A59061AE2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quartz.CoreCs", "Quartz.CoreCs\Quartz.CoreCs.csproj", "{F1DD8A10-D1DB-4B24-BF5D-DF2116B3CF57}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quartz.Benchmarks", "Quartz.Benchmarks\Quartz.Benchmarks.csproj", "{0720ECB5-2FED-408F-AD64-B46B5AF0C466}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +30,17 @@ Global
 		{32603830-0881-4326-9E7A-B4F8D028810D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32603830-0881-4326-9E7A-B4F8D028810D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32603830-0881-4326-9E7A-B4F8D028810D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2109CF4-A7D3-402E-84A4-FA3A59061AE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2109CF4-A7D3-402E-84A4-FA3A59061AE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2109CF4-A7D3-402E-84A4-FA3A59061AE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2109CF4-A7D3-402E-84A4-FA3A59061AE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1DD8A10-D1DB-4B24-BF5D-DF2116B3CF57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1DD8A10-D1DB-4B24-BF5D-DF2116B3CF57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1DD8A10-D1DB-4B24-BF5D-DF2116B3CF57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1DD8A10-D1DB-4B24-BF5D-DF2116B3CF57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0720ECB5-2FED-408F-AD64-B46B5AF0C466}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0720ECB5-2FED-408F-AD64-B46B5AF0C466}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0720ECB5-2FED-408F-AD64-B46B5AF0C466}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0720ECB5-2FED-408F-AD64-B46B5AF0C466}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

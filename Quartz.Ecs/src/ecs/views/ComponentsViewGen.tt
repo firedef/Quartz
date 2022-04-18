@@ -1,0 +1,47 @@
+<#@ template language="C#v3.5" #>
+<#@ assembly name="System.Core"#>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+using Quartz.Ecs.ecs.archetypes;
+using Quartz.Ecs.ecs.components;
+using Quartz.Ecs.ecs.worlds;
+
+namespace Quartz.Ecs.ecs.views;
+
+<#
+    const int normalCount = 8;
+    const int sharedCount = 4;
+
+    for (int nI = 0; nI <= normalCount; nI++) {
+        for (int sI = 0; sI <= sharedCount; sI++) {
+            if (nI == 0 && sI == 0) continue;
+            int[] normalGenerics = Enumerable.Range(0, nI).ToArray();
+            int[] sharedGenerics = Enumerable.Range(0, sI).ToArray();
+            int[] generics = Enumerable.Range(0, nI + sI).ToArray();
+            string nameAddS = sI > 0 ? $"S{sI}" : "";
+            string genericsStr = $"<{string.Join(", ", generics.Select(v => $"T{v}"))}>";
+#>
+public unsafe class ComponentsView<#=nameAddS#><#=genericsStr#>
+    <#= string.Join("\n\t", generics.Select(v => $"where T{v} : unmanaged, " + (v < nI ? "IComponent" : "ISharedComponent")))#> {
+    public readonly Archetype archetype;
+
+    <#= string.Join("\n\t", normalGenerics.Select(v => $"public readonly T{v}* component{v};"))#>
+    <#= string.Join("\n\t", sharedGenerics.Select(v => $"public readonly ushort* component{v+nI};"))#>
+
+    <#= string.Join("\n\t", sharedGenerics.Select(v => $"public T{v+nI}* componentValue{v+nI} => World.GetSharedComponent<T{v+nI}>(*component{v+nI});"))#>
+
+    public readonly int count;
+
+    public ComponentsView<#=nameAddS#>(Archetype archetype, <#= string.Join(", ", generics.Select(v => (v < nI ? $"T{v}* component{v}" : $"ushort* component{v}")))#>, int count) {
+        this.archetype = archetype;
+        <#= string.Join("\n\t\t", generics.Select(v => $"this.component{v} = component{v};"))#>
+        this.count = count;
+    }
+}
+
+<#
+        }
+    }
+#>

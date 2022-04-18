@@ -1,5 +1,4 @@
 using OpenTK.Graphics.OpenGL.Compatibility;
-using Quartz.other.events;
 using Quartz.ui.windows;
 
 namespace Quartz.graphics.render.targets; 

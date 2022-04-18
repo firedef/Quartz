@@ -25,6 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Quartz.Ecs\Quartz.Ecs.csproj" />
       <ProjectReference Include="..\Quartz\Quartz.csproj" />
     </ItemGroup>
 

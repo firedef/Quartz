@@ -1,4 +1,4 @@
-using Quartz.other.events;
+using Quartz.CoreCs.other.events;
 
 namespace Quartz.graphics.render.renderers; 
 

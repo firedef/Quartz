@@ -1,7 +1,6 @@
 using System.Collections;
-using Quartz.collections;
+using Quartz.CoreCs.collections;
 using Quartz.objects.ecs.entities;
-using Quartz.objects.memory;
 // ReSharper disable InconsistentlySynchronizedField
 
 namespace Quartz.objects.ecs.components;

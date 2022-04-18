@@ -1,7 +1,7 @@
 using Quartz.debug.log;
-using Quartz.objects.ecs.delegates;
-using Quartz.objects.ecs.entities;
-using Quartz.objects.ecs.world;
+using Quartz.Ecs.ecs.delegates;
+using Quartz.Ecs.ecs.identifiers;
+using Quartz.Ecs.ecs.worlds;
 
 namespace Quartz.objects.hierarchy.ecs; 
 
@@ -36,7 +36,7 @@ public static class HierarchyExtensions {
 	public static void AddChild(this EntityId parent, EntityId child) => parent.world.AddChild(parent, child);
 
 	public static EntityId AddChild(this EntityId parent) {
-		EntityId child = parent.world.CreateEntity();
+		EntityId child = parent.world.AddEntity();
 		parent.AddChild(child);
 		return child;
 	}
@@ -94,37 +94,37 @@ public static class HierarchyExtensions {
 		return ptr == null ? (byte)0 : ptr->hierarchyLevel;
 	}
 
-	public static unsafe void ForeachChild(this World world, EntityId entity, EcsDelegates.ComponentEntityDelegate<HierarchyComponent> a) {
+	public static unsafe void ForeachChild(this World world, EntityId entity, ComponentEntityDelegate<HierarchyComponent> a) {
 		HierarchyComponent* ptr = world.TryComp<HierarchyComponent>(entity);
 		if (ptr == null) return;
 		if (!ptr->firstChild.isValid) return;
 		entity = ptr->firstChild;
 		ptr = world.Comp<HierarchyComponent>(entity);
-		a(ptr, entity);
+		a(entity, ptr);
 		ForeachSibling(world, entity, a);
 	}
 	
-	public static unsafe void ForeachChild(this EntityId entity, EcsDelegates.ComponentEntityDelegate<HierarchyComponent> a) => entity.world.ForeachChild(entity, a);
+	public static unsafe void ForeachChild(this EntityId entity, ComponentEntityDelegate<HierarchyComponent> a) => entity.world.ForeachChild(entity, a);
 	
-	public static unsafe void ForeachSibling(this World world, EntityId entity, EcsDelegates.ComponentEntityDelegate<HierarchyComponent> a) {
+	public static unsafe void ForeachSibling(this World world, EntityId entity, ComponentEntityDelegate<HierarchyComponent> a) {
 		HierarchyComponent* ptr = world.TryComp<HierarchyComponent>(entity);
 		if (ptr == null) return;
 
 		while (ptr->nextSibling.isValid) {
 			entity = ptr->nextSibling;
 			ptr = world.Comp<HierarchyComponent>(entity);
-			a(ptr, entity);
+			a(entity, ptr);
 		}
 	}
 	
-	public static unsafe void ForeachParent(this World world, EntityId entity, EcsDelegates.ComponentEntityDelegate<HierarchyComponent> a) {
+	public static unsafe void ForeachParent(this World world, EntityId entity, ComponentEntityDelegate<HierarchyComponent> a) {
 		HierarchyComponent* ptr = world.TryComp<HierarchyComponent>(entity);
 		if (ptr == null) return;
 
 		while (ptr->parent.isValid) {
 			entity = ptr->parent;
 			ptr = world.Comp<HierarchyComponent>(entity);
-			a(ptr, entity);
+			a(entity, ptr);
 		}
 	}
 

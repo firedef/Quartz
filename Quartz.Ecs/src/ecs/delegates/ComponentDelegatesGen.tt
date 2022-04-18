@@ -1,0 +1,39 @@
+<#@ template language="C#v3.5" #>
+<#@ assembly name="System.Core"#>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+using Quartz.Ecs.ecs.components;
+using Quartz.Ecs.ecs.identifiers;
+
+namespace Quartz.Ecs.ecs.delegates;
+
+<#
+    const int normalCount = 8;
+    const int sharedCount = 4;
+
+    for (int nI = 0; nI <= normalCount; nI++) {
+        for (int sI = 0; sI <= sharedCount; sI++) {
+            if (nI == 0 && sI == 0) continue;
+            int[] normalGenerics = Enumerable.Range(0, nI).ToArray();
+            int[] sharedGenerics = Enumerable.Range(0, sI).ToArray();
+            int[] generics = Enumerable.Range(0, nI + sI).ToArray();
+            string nameAddS = sI > 0 ? $"S{sI}" : "";
+#>
+public unsafe delegate void ComponentDelegate<#=nameAddS#><<#= string.Join(", ", generics.Select(v => $"T{v}"))#>>(<#= string.Join(", ", normalGenerics.Select(v => $"T{v}* t{v}").Concat(sharedGenerics.Select(v => $"ushort* t{v + nI}")))#>)
+    <#= string.Join("\n\t", normalGenerics.Select(v => $"where T{v} : unmanaged, IComponent"))#>
+    <#= string.Join("\n\t", sharedGenerics.Select(v => $"where T{v + nI} : unmanaged, ISharedComponent"))#>;
+
+public unsafe delegate void ComponentEntityDelegate<#=nameAddS#><<#= string.Join(", ", generics.Select(v => $"T{v}"))#>>(EntityId entity, <#= string.Join(", ", normalGenerics.Select(v => $"T{v}* t{v}").Concat(sharedGenerics.Select(v => $"ushort* t{v + nI}")))#>)
+    <#= string.Join("\n\t", normalGenerics.Select(v => $"where T{v} : unmanaged, IComponent"))#>
+    <#= string.Join("\n\t", sharedGenerics.Select(v => $"where T{v + nI} : unmanaged, ISharedComponent"))#>;
+
+public unsafe delegate bool ComponentPredicate<#=nameAddS#><<#= string.Join(", ", generics.Select(v => $"T{v}"))#>>(<#= string.Join(", ", normalGenerics.Select(v => $"T{v}* t{v}").Concat(sharedGenerics.Select(v => $"ushort* t{v + nI}")))#>)
+    <#= string.Join("\n\t", normalGenerics.Select(v => $"where T{v} : unmanaged, IComponent"))#>
+    <#= string.Join("\n\t", sharedGenerics.Select(v => $"where T{v + nI} : unmanaged, ISharedComponent"))#>;
+
+<#
+        }
+    }
+#>

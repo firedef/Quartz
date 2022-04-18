@@ -1,6 +1,6 @@
 using System.Reflection;
+using Quartz.CoreCs.other.events;
 using Quartz.objects.ecs.world;
-using Quartz.other.events;
 
 namespace Quartz.objects.ecs.systems; 
 
@@ -37,7 +37,7 @@ public static class EntitySystemExtensions {
 	// }
 	
 	public static void DispatchExecution(this EntitySystem sys, int delayTicks, int maxTickOffset = 5, float weight = 25, bool mainThread = false, bool waitForComplete = true) {
-		FixedUpdatePipeline.EnqueueWithDelay(sys.Execute, delayTicks, maxTickOffset, mainThread, weight, waitForComplete);
+		FixedUpdatePipeline.EnqueueWithDelay(sys.Execute, $"{sys.GetType().FullName}.Execute()", delayTicks, maxTickOffset, mainThread, weight, waitForComplete);
 	}
 
 	public static void ExecuteByDispatcher(this EntitySystem sys, EventTypes type) => Dispatcher.global.Push(sys.Execute, type);

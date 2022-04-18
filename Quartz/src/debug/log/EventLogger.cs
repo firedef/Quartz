@@ -1,5 +1,5 @@
+using Quartz.CoreCs.other.events;
 using Quartz.objects.scenes;
-using Quartz.other.events;
 
 namespace Quartz.debug.log; 
 

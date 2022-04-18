@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using Quartz.other;
+using Quartz.CoreCs.other;
 
 namespace Quartz.Tests.utils; 
 

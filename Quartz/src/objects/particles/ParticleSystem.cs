@@ -1,10 +1,9 @@
 using MathStuff;
 using MathStuff.vectors;
 using OpenTK.Graphics.OpenGL.Compatibility;
+using Quartz.CoreCs.other;
 using Quartz.objects.mesh;
 using Quartz.objects.particles.emitters;
-using Quartz.other;
-using Quartz.other.time;
 
 namespace Quartz.objects.particles; 
 

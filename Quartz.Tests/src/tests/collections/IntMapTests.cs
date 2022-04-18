@@ -1,9 +1,7 @@
 using System.Collections.Generic;
-using System.Diagnostics;
 using NUnit.Framework;
-using Quartz.collections;
-using Quartz.core.collections;
-using Quartz.other;
+using Quartz.CoreCs.collections;
+using Quartz.CoreCs.native.collections;
 using Quartz.Tests.utils;
 
 namespace Quartz.Tests.tests.collections; 

@@ -1,0 +1,92 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Quartz.Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MathStuff" Version="1.0.0" />
+      <PackageReference Include="YamlDotNet" Version="11.2.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Quartz.CoreCs\Quartz.CoreCs.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="src\ecs\delegates\ComponentDelegatesGen.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>ComponentDelegatesGen.cs</LastGenOutput>
+      </None>
+      <None Update="src\ecs\components\data\ArchetypeComponentsGen.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>ArchetypeComponentsGen.cs</LastGenOutput>
+      </None>
+      <None Update="src\ecs\views\ComponentsViewGen.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>ComponentsViewGen.cs</LastGenOutput>
+      </None>
+      <None Update="src\ecs\filters\FilterGen.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>FilterGen.cs</LastGenOutput>
+      </None>
+      <None Update="src\ecs\archetypes\ArchetypeGen.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>ArchetypeGen.cs</LastGenOutput>
+      </None>
+      <None Update="src\ecs\jobs\JobSchedulerGen.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>JobSchedulerGen.cs</LastGenOutput>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="src\ecs\delegates\ComponentDelegatesGen.cs">
+        <AutoGen>True</AutoGen>
+        <DesignTime>True</DesignTime>
+        <DependentUpon>ComponentDelegatesGen.tt</DependentUpon>
+      </Compile>
+      <Compile Update="src\ecs\components\data\ArchetypeComponentsGen.cs">
+        <AutoGen>True</AutoGen>
+        <DesignTime>True</DesignTime>
+        <DependentUpon>ArchetypeComponentsGen.tt</DependentUpon>
+      </Compile>
+      <Compile Update="src\ecs\views\ComponentsViewGen.cs">
+        <AutoGen>True</AutoGen>
+        <DesignTime>True</DesignTime>
+        <DependentUpon>ComponentsViewGen.tt</DependentUpon>
+      </Compile>
+      <Compile Update="src\ecs\filters\FilterGen.cs">
+        <AutoGen>True</AutoGen>
+        <DesignTime>True</DesignTime>
+        <DependentUpon>FilterGen.tt</DependentUpon>
+      </Compile>
+      <Compile Update="src\ecs\archetypes\ArchetypeGen.cs">
+        <AutoGen>True</AutoGen>
+        <DesignTime>True</DesignTime>
+        <DependentUpon>ArchetypeGen.tt</DependentUpon>
+      </Compile>
+      <Compile Update="src\ecs\jobs\JobSchedulerGen.cs">
+        <AutoGen>True</AutoGen>
+        <DesignTime>True</DesignTime>
+        <DependentUpon>JobSchedulerGen.tt</DependentUpon>
+      </Compile>
+    </ItemGroup>
+
+</Project>

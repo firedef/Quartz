@@ -1,0 +1,40 @@
+<#@ template language="C#v3.5" #>
+<#@ assembly name="System.Core"#>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+using Quartz.Ecs.ecs.components;
+using Quartz.Ecs.ecs.views;
+
+namespace Quartz.Ecs.ecs.archetypes;
+
+public partial class Archetype {
+<#
+    const int normalCount = 6;
+    const int sharedCount = 2;
+
+    for (int nI = 0; nI <= normalCount; nI++) {
+        for (int sI = 0; sI <= sharedCount; sI++) {
+            if (nI == 0 && sI == 0) continue;
+            int[] normalGenerics = Enumerable.Range(0, nI).ToArray();
+            int[] sharedGenerics = Enumerable.Range(0, sI).ToArray();
+            int[] generics = Enumerable.Range(0, nI + sI).ToArray();
+            string genericsStr = $"<{string.Join(", ", generics.Select(v => $"T{v}"))}>";
+            string nameAddS = sI > 0 ? $"S{sI}" : "";
+#>
+    /// <summary>
+    /// get components view of <#=nI#> normal components and <#=sI#> shared components
+    /// </summary>
+    /// <#=string.Join("\n\t/// ", generics.Select(v => $"<typeparam name=\"T{v}\">{(v < nI ? $"normal component #{v}" : $"shared component #{v - nI}")}</typeparam>"))#>
+    public ComponentsView<#=nameAddS#><#=genericsStr#> Components<#=nameAddS#><#=genericsStr#>()<#=GetGenerics()#>
+        => components.GetView<#=nameAddS#><#=genericsStr#>();
+
+<#
+            string GetGenerics() => GetNormalGenerics() + GetSharedGenerics();
+            string GetNormalGenerics() => string.Join("", normalGenerics.Select(v => $"\n\t\twhere T{v} : unmanaged, IComponent"));
+            string GetSharedGenerics() => string.Join("", sharedGenerics.Select(v => $"\n\t\twhere T{v + nI} : unmanaged, ISharedComponent"));
+        }
+    }
+#>
+}

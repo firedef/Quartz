@@ -1,0 +1,73 @@
+<#@ template language="C#v3.5" #>
+<#@ assembly name="System.Core"#>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+using MathStuff;
+using Quartz.Ecs.ecs.delegates;
+using Quartz.Ecs.ecs.views;
+using Quartz.Ecs.exceptions;
+// ReSharper disable CognitiveComplexity
+
+namespace Quartz.Ecs.ecs.components.data;
+
+public partial class ArchetypeComponents {
+<#
+    const int normalCount = 6;
+    const int sharedCount = 2;
+
+    for (int nI = 0; nI <= normalCount; nI++) {
+        for (int sI = 0; sI <= sharedCount; sI++) {
+            if (nI == 0 && sI == 0) continue;
+            int[] normalGenerics = Enumerable.Range(0, nI).ToArray();
+            int[] sharedGenerics = Enumerable.Range(0, sI).ToArray();
+            int[] generics = Enumerable.Range(0, nI + sI).ToArray();
+            string genericsStr = $"<{string.Join(", ", generics.Select(v => $"T{v}"))}>";
+            string nameAddS = sI > 0 ? $"S{sI}" : "";
+#>
+    /// <summary> invoke delegate for every component </summary>
+    public unsafe void Foreach<#=nameAddS#><#=genericsStr#>(ComponentDelegate<#=nameAddS#><#=genericsStr#> a, <#=string.Join(", ", generics.Select(v => $"int i{v}"))#>, int skip = 0, int skipEnd = 0, int take = int.MaxValue) <#= GetGenerics()#> {
+        lock (_lock) {
+            int startCount = elementCount;
+            int count = math.min(startCount - skipEnd, take + skip);
+            <#= string.Join("\n\t\t\t", normalGenerics.Select(v => $"T{v}* ptr{v} = (T{v}*) _normal.data[i{v}].rawData;"))#>
+            <#= string.Join("\n\t\t\t", sharedGenerics.Select(v => $"ushort* ptr{v + nI} = _shared.data[i{v + nI}].data;"))#>
+
+            for (int i = skip; i < count; i++) 
+                a(<#= string.Join(", ", generics.Select(v => $"ptr{v} + i"))#>);
+            
+            if (elementCount != startCount) throw new CollectionModifiedException();
+        }
+    }
+
+    /// <summary> invoke delegate for every component with ability to modify collections (add/remove) <br/><br/>if predicate returns false, element will be removed from collection, otherwise continue execution </summary>
+    public unsafe void ModifyCollection<#=nameAddS#><#=genericsStr#>(ComponentPredicate<#=nameAddS#><#=genericsStr#> a, <#=string.Join(", ", generics.Select(v => $"int i{v}"))#>, int skip = 0, int skipEnd = 0, int take = int.MaxValue, bool invokeForNew = true) <#= GetGenerics()#> {
+        lock (_lock) {
+            <#= string.Join("\n\t\t\t", normalGenerics.Select(v => $"T{v}* ptr{v} = (T{v}*) _normal.data[i{v}].rawData;"))#>
+            <#= string.Join("\n\t\t\t", sharedGenerics.Select(v => $"ushort* ptr{v + nI} = _shared.data[i{v + nI}].data;"))#>
+
+            if (invokeForNew)
+                for (int i = skip; i < math.min(elementCount - skipEnd, take + skip);) 
+                    if (a(<#= string.Join(", ", generics.Select(v => $"ptr{v} + i"))#>)) i++;
+                    else RemoveComponents(i);
+            else {
+                int c = math.min(elementCount - skipEnd, take + skip);
+                for (int i = skip; i < c;) 
+                    if (a(<#= string.Join(", ", generics.Select(v => $"ptr{v} + i"))#>)) i++;
+                    else { RemoveComponents(i); c--; }
+            }
+        }
+    }
+
+    public unsafe ComponentsView<#=nameAddS#><#=genericsStr#> GetView<#=nameAddS#><#=genericsStr#>() <#= GetGenerics()#> 
+        => new(_owner, <#=string.Join(", ", generics.Select(v => $"{(v < nI ? $"(T{v}*) _normal" : "(ushort*) _shared")}.data[{(v < nI ? "IndexOfNormalComponent" : "IndexOfSharedComponent")}(typeof(T{v}).Get())].rawData"))#>, elementCount);
+
+<#
+            string GetGenerics() => GetNormalGenerics() + GetSharedGenerics();
+            string GetNormalGenerics() => string.Join("", normalGenerics.Select(v => $"\n\t\twhere T{v} : unmanaged, IComponent"));
+            string GetSharedGenerics() => string.Join("", sharedGenerics.Select(v => $"\n\t\twhere T{v + nI} : unmanaged, ISharedComponent"));
+        }
+    }
+#>
+}
